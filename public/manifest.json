@@ -1,0 +1,39 @@
+{
+  "name": "لاونج الشيشة",
+  "short_name": "شيشة",
+  "description": "نظام إدارة صالة الشيشة",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0d0d0d",
+  "theme_color": "#d4af37",
+  "orientation": "any",
+  "lang": "ar",
+  "dir": "rtl",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["business", "productivity"],
+  "shortcuts": [
+    {
+      "name": "إنشاء طلب",
+      "url": "/order",
+      "description": "إنشاء طلب جديد"
+    },
+    {
+      "name": "لوحة التحكم",
+      "url": "/admin",
+      "description": "لوحة تحكم المدير"
+    }
+  ]
+}
