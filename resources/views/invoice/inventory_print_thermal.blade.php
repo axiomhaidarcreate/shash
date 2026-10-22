@@ -3,19 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>جرد حراري - {{ $targetDate->format('Y-m-d') }}</title>
+    <title>جرد حراري - {{ $targetDate->format('Y-m-d') }}{{ $shiftLabel ? ' - '.$shiftLabel : '' }}</title>
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;800&display=swap" rel="stylesheet">
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
+        @page {
+            size: 80mm auto;
+            margin: 0;
+        }
         body {
             font-family: 'Tajawal', sans-serif;
             background: #fff;
             color: #000;
-            width: 100%;
-            max-width: 300px;
-            margin: 0 auto;
-            padding: 10px;
-            font-size: 11px;
+            margin: 0;
+            padding: 2mm 4mm;
+            text-align: center;
+            width: 80mm;
+            box-sizing: border-box;
+            font-size: 13px;
+            font-weight: bold !important;
         }
         .receipt { width: 100%; }
 
@@ -31,7 +37,8 @@
 
         /* Meta info */
         .meta {
-            font-size: 10px;
+            font-size: 12px;
+            font-weight: bold;
             border-bottom: 1px dashed #000;
             padding-bottom: 6px;
             margin-bottom: 8px;
@@ -42,35 +49,28 @@
         table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 10px;
+            font-size: 12px;
+            font-weight: bold;
         }
         th {
             background: #000;
             color: #fff;
-            padding: 4px 3px;
+            padding: 3px 1px;
             font-weight: 800;
-            font-size: 9px;
+            font-size: 11px;
             border: 1px solid #000;
         }
         td {
-            padding: 3px;
+            padding: 3px 1px;
             border: 1px solid #ccc;
             text-align: center;
             vertical-align: middle;
-        }
-        .group-row td {
-            background: #ddd;
-            font-weight: 800;
-            font-size: 11px;
-            border-top: 2px solid #000;
-            text-align: right;
-            padding-right: 6px;
         }
         .total-row td {
             background: #000;
             color: #fff;
             font-weight: 800;
-            font-size: 11px;
+            font-size: 13px;
             border-top: 2px solid #000;
         }
 
@@ -82,7 +82,7 @@
         }
         .product-title {
             font-weight: 800;
-            font-size: 11px;
+            font-size: 13px;
             margin-bottom: 6px;
             text-align: center;
         }
@@ -98,8 +98,8 @@
         }
 
         @media print {
-            body { padding: 0; max-width: 100%; }
-            @page { margin: 2mm; }
+            body { padding: 2mm 4mm; width: 80mm; }
+            .receipt { border: none; padding: 0; width: 100%; }
         }
     </style>
 </head>
@@ -107,14 +107,28 @@
 
     <div class="receipt">
         <div class="header">
-            <h2>{{ $loungeName }}</h2>
-            <div class="sub">تقرير جرد الطاولات</div>
+            @if(isset($customTitle) && $customTitle)
+                <h2>{{ $customTitle }}</h2>
+            @else
+                <h2>{{ $loungeName }}</h2>
+            @endif
+            @if($shiftLabel)
+                <div class="sub" style="font-size:12px; font-weight:800; color:#000;">{{ $shiftLabel }}</div>
+                <div class="sub">جرد فاتورة الفترة المحاسبية</div>
+            @else
+                <div class="sub">تقرير جرد الطاولات والآلات</div>
+            @endif
         </div>
 
         <div class="meta">
             <div><span>التاريخ:</span> <span>{{ $targetDate->format('Y/m/d') }}</span></div>
+            @if($shiftLabel)
+                <div><span>الفترة:</span> <span style="font-weight:800;">{{ $shiftLabel }}</span></div>
+                <div><span>من:</span> <span>{{ $startAt->format('h:i A') }}</span></div>
+                <div><span>حتى:</span> <span>{{ $endAt->format('h:i A') }}</span></div>
+            @endif
             <div><span>وقت الطباعة:</span> <span>{{ now()->format('h:i A') }}</span></div>
-            <div><span>الطاولات:</span> <span>{{ count($tableReport) }}</span></div>
+            <div><span>الطاولات:</span> <span>{{ $totalTables }}</span></div>
             <div><span>الطلبيات:</span> <span>{{ $totalOrders }}</span></div>
             <div><span>الرؤوس:</span> <span><strong>{{ $totalQty }}</strong></span></div>
         </div>
@@ -125,37 +139,52 @@
         <table>
             <thead>
                 <tr>
-                    <th>الطاولة</th>
-                    <th>النوع</th>
-                    <th>الكمية</th>
-                    <th>الوقت</th>
+                    <th style="width:15%;">الصالة</th>
+                    <th style="width:18%;">الطاولة</th>
+                    <th style="width:37%;">النوع (الكمية)</th>
+                    <th style="width:30%;">الموظف/الوقت</th>
                 </tr>
             </thead>
             <tbody>
                 @php $grandTotal = 0; @endphp
-                @foreach($tableReport as $key => $report)
-                    @php
-                        $tableTotal = array_sum(array_column($report['orders'], 'quantity'));
-                        $grandTotal += $tableTotal;
-                    @endphp
-                    <tr class="group-row">
-                        <td colspan="2">ط{{ $report['table_number'] }} @if($report['section'])({{ $report['section'] }})@endif</td>
-                        <td style="text-align:center;">{{ $tableTotal }}</td>
-                        <td></td>
-                    </tr>
+                @foreach($tableReport as $sectionName => $report)
+                    @php $sectionTotal = 0; @endphp
                     @foreach($report['orders'] as $ord)
+                    @php 
+                        $grandTotal += $ord['quantity']; 
+                        $sectionTotal += $ord['quantity'];
+                    @endphp
                     <tr>
-                        <td></td>
-                        <td style="text-align:right; font-weight:600; font-size:10px;">{{ $ord['shisha_type'] }}</td>
-                        <td style="font-weight:800; font-size:12px;">{{ $ord['quantity'] }}</td>
-                        <td style="font-size:8px;">{{ $ord['time'] }}</td>
+                        @if($loop->first)
+                        <td rowspan="{{ count($report['orders']) }}" style="font-weight:bold; font-size:9px; vertical-align:middle; background:#f9f9f9; border-left: 1px solid #000;">
+                            {{ $sectionName }}
+                        </td>
+                        @endif
+                        <td>طا{{ $ord['table_number'] }}</td>
+                        <td style="text-align:right;">
+                            <span style="font-weight:600; font-size:9px;">{{ $ord['shisha_type'] }}</span> 
+                            <span style="font-weight:800; font-size:10px; color:#000;">({{ $ord['quantity'] }})</span>
+                        </td>
+                        <td style="font-size:8px; text-align:right; direction:rtl;">
+                            {{ $ord['waiter'] }}<br>
+                            <span style="font-size:7px; color:#444;">{{ $ord['datetime'] }}</span>
+                            @if($ord['ticket_barcode'])
+                            <br><span style="font-size:8px; font-weight:bold; color:#000;">تذكرة: {{ $ord['ticket_barcode'] }}</span>
+                            @endif
+                            @if(!empty($ord['guest_name']))
+                            <br><span style="font-size:8px; font-weight:bold; color:var(--primary-color);">ضيف: {{ $ord['guest_name'] }}</span>
+                            @endif
+                        </td>
                     </tr>
                     @endforeach
+                    <tr style="background-color: #e8e8e8; border-top: 1px solid #999; border-bottom: 2px solid #000;">
+                        <td colspan="2" style="text-align:right; padding-right:6px; font-weight:800; font-size:10px;">إجمالي {{ $sectionName }}</td>
+                        <td colspan="2" style="text-align:center; font-weight:800; font-size:11px;">{{ $sectionTotal }} رأس</td>
+                    </tr>
                 @endforeach
                 <tr class="total-row">
-                    <td colspan="2" style="text-align:right; padding-right:6px;">الإجمالي</td>
-                    <td>{{ $grandTotal }}</td>
-                    <td></td>
+                    <td colspan="2" style="text-align:right; padding-right:6px;">الإجمالي الكلي</td>
+                    <td colspan="2" style="text-align:center;">{{ $grandTotal }} رأس</td>
                 </tr>
             </tbody>
         </table>

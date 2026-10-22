@@ -10,19 +10,198 @@
         </div>
     @endif
 
+    <!-- Audio Notification Script -->
+    <script>
+        document.addEventListener('livewire:init', () => {
+            Livewire.on('play-approval-sound', () => {
+                try {
+                    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                    const oscillator = audioCtx.createOscillator();
+                    const gainNode = audioCtx.createGain();
+                    
+                    oscillator.connect(gainNode);
+                    gainNode.connect(audioCtx.destination);
+                    
+                    oscillator.type = 'triangle';
+                    
+                    // Pleasant double ding
+                    oscillator.frequency.setValueAtTime(800, audioCtx.currentTime);
+                    oscillator.frequency.setValueAtTime(1200, audioCtx.currentTime + 0.15);
+                    
+                    gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
+                    gainNode.gain.linearRampToValueAtTime(0.5, audioCtx.currentTime + 0.05);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
+                    
+                    oscillator.start(audioCtx.currentTime);
+                    oscillator.stop(audioCtx.currentTime + 0.5);
+                } catch(e) {
+                    console.log('Audio notification blocked by browser.');
+                }
+            });
+        });
+    </script>
+
+    <!-- Manager Approval Requests Section -->
+    @if($approvalRequests->count() > 0)
+    <div class="card" style="margin-bottom: 1.5rem; border: 2px solid var(--info-color); background: rgba(33, 150, 243, 0.03); box-shadow: 0 0 15px rgba(33, 150, 243, 0.2);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 10px;">
+            <h3 style="color: var(--info-color); display: flex; align-items: center; gap: 8px; margin: 0;">
+                <i class="fa-solid fa-user-tie fa-bounce"></i>
+                طلبات خاصة بانتظار الموافقة (بدون كاشير) 
+                <span style="background: var(--info-color); color: #fff; border-radius: 50%; padding: 2px 8px; font-size: 0.9rem;">{{ $approvalRequests->count() }}</span>
+            </h3>
+        </div>
+        <div style="overflow-x: auto; -webkit-overflow-scrolling: touch;">
+            <table class="data-table" style="min-width: 600px;">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>الضيف</th>
+                        <th>الطاولة</th>
+                        <th>الطلب</th>
+                        <th>بواسطة</th>
+                        <th style="width: 220px;">الإجراء</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($approvalRequests as $req)
+                    <tr wire:key="approval-req-{{ $req->id }}" style="background: rgba(33, 150, 243, 0.05);">
+                        <td style="font-weight: bold; color: var(--info-color);">#{{ $req->id }}</td>
+                        <td style="font-weight: bold; font-size: 1.05rem; color: #fff;">
+                            <i class="fa-solid fa-user-tag" style="color: var(--primary-color);"></i> {{ $req->guest_name ?: 'غير محدد' }}
+                        </td>
+                        <td>طاولة {{ $req->table->number ?? '-' }} / كرسي {{ $req->chair->number ?? '-' }} @if($req->table && $req->table->section)<span style="font-size: 0.8rem; color: #777;">({{ $req->table->section }})</span>@endif</td>
+                        <td>
+                            {{ $req->quantity }}x {{ $req->shisha_type }}
+                            @if($req->notes)
+                                <div style="font-size: 0.85rem; color: var(--warning-color); margin-top: 5px;">
+                                    <i class="fa-solid fa-note-sticky"></i> ملاحظة: {{ $req->notes }}
+                                </div>
+                            @endif
+                        </td>
+                        <td>{{ $req->user->name ?? '-' }}</td>
+                        <td>
+                            <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                                <button wire:click="approveSpecialOrder({{ $req->id }})" class="btn btn-sm" style="background: #4CAF50; color: #fff; border: none; padding: 0.4rem 0.8rem;" onclick="return confirm('هل أنت متأكد من الموافقة؟ سيتم إرسال الطلب للتحضير في المطبخ.')">
+                                    <i class="fa-solid fa-check"></i> موافقة
+                                </button>
+                                <button wire:click="rejectSpecialOrder({{ $req->id }})" class="btn btn-sm" style="background: #F44336; color: #fff; border: none; padding: 0.4rem 0.8rem;" onclick="return confirm('هل أنت متأكد من الرفض؟ سيتم إلغاء الطلب.')">
+                                    <i class="fa-solid fa-xmark"></i> رفض
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+    </div>
+    @endif
+
+    <!-- Cancel Requests Section (Moved here from bottom) -->
+    @if($cancelRequests->count() > 0 || (isset($duplicateCancelRequests) && $duplicateCancelRequests->count() > 0))
+    <div class="layout-grid" style="margin-bottom: 1.5rem;">
+        
+        @if($cancelRequests->count() > 0)
+        <div class="card" style="border: 2px solid var(--warning-color); background: rgba(255,152,0,0.03);">
+            <h3 style="margin-bottom: 1rem; color: var(--warning-color);">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+                طلبات الإلغاء المعلقة (إلغاء كامل وتحرير الطاولة) <span style="background: var(--warning-color); color: #000; border-radius: 50%; padding: 2px 8px; font-size: 0.9rem;">{{ $cancelRequests->count() }}</span>
+            </h3>
+            <div style="overflow-x: auto; -webkit-overflow-scrolling: touch;">
+                <table class="data-table" style="min-width: 500px;">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>الطاولة</th>
+                            <th>الطلب</th>
+                            <th>بواسطة</th>
+                            <th style="width: 220px;">الإجراء</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($cancelRequests as $req)
+                        <tr wire:key="cancel-req-{{ $req->id }}" style="background: rgba(255,152,0,0.05);">
+                            <td style="font-weight: bold; color: var(--warning-color);">#{{ $req->id }}</td>
+                            <td>طاولة {{ $req->table->number ?? '-' }} / كرسي {{ $req->chair->number ?? '-' }} @if($req->table && $req->table->section)<span style="font-size: 0.8rem; color: #777;">({{ $req->table->section }})</span>@endif</td>
+                            <td>{{ $req->quantity }}x {{ $req->shisha_type }}</td>
+                            <td>{{ $req->user->name ?? '-' }}</td>
+                            <td>
+                                <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                                    <button wire:click="approveCancellation({{ $req->id }})" class="btn btn-sm" style="background: #4CAF50; color: #fff; border: none; padding: 0.4rem 0.8rem;" onclick="return confirm('موافقة على إلغاء الطلب، سيتم تحرير الطاولة. هل أنت متأكد؟')">
+                                        <i class="fa-solid fa-check"></i> موافقة
+                                    </button>
+                                    <button wire:click="rejectCancellation({{ $req->id }})" class="btn btn-sm" style="background: #F44336; color: #fff; border: none; padding: 0.4rem 0.8rem;">
+                                        <i class="fa-solid fa-xmark"></i> رفض
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        @endif
+
+        @if(isset($duplicateCancelRequests) && $duplicateCancelRequests->count() > 0)
+        <div class="card" style="border: 2px solid #9C27B0; background: rgba(156,39,176,0.03);">
+            <h3 style="margin-bottom: 1rem; color: #9C27B0;">
+                <i class="fa-solid fa-clone"></i>
+                طلبات إلغاء التكرار <span style="background: #9C27B0; color: #fff; border-radius: 50%; padding: 2px 8px; font-size: 0.9rem;">{{ $duplicateCancelRequests->count() }}</span>
+            </h3>
+            <div style="overflow-x: auto; -webkit-overflow-scrolling: touch;">
+                <table class="data-table" style="min-width: 500px;">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>الطاولة</th>
+                            <th>الطلب</th>
+                            <th>بواسطة</th>
+                            <th style="width: 220px;">الإجراء</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($duplicateCancelRequests as $req)
+                        <tr wire:key="cancel-dup-req-{{ $req->id }}" style="background: rgba(156,39,176,0.05);">
+                            <td style="font-weight: bold; color: #9C27B0;">#{{ $req->id }}</td>
+                            <td>طاولة {{ $req->table->number ?? '-' }} / كرسي {{ $req->chair->number ?? '-' }} @if($req->table && $req->table->section)<span style="font-size: 0.8rem; color: #777;">({{ $req->table->section }})</span>@endif</td>
+                            <td>{{ $req->quantity }}x {{ $req->shisha_type }}</td>
+                            <td>{{ $req->user->name ?? '-' }}</td>
+                            <td>
+                                <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                                    <button wire:click="approveCancelDuplicate({{ $req->id }})" class="btn btn-sm" style="background: #4CAF50; color: #fff; border: none; padding: 0.4rem 0.8rem;" onclick="return confirm('موافقة على إلغاء الطلب المكرر فقط؟')">
+                                        <i class="fa-solid fa-check"></i> موافقة
+                                    </button>
+                                    <button wire:click="rejectCancelDuplicate({{ $req->id }})" class="btn btn-sm" style="background: #F44336; color: #fff; border: none; padding: 0.4rem 0.8rem;">
+                                        <i class="fa-solid fa-xmark"></i> رفض
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        @endif
+
+    </div>
+    @endif
+
     <!-- Stats -->
     <div class="grid grid-cols-4" style="margin-bottom: 1.5rem; gap: 1rem;">
-        <div class="card" style="text-align: center; border-top: 3px solid var(--primary-color); padding: clamp(0.7rem, 2vw, 1rem);">
+        <div wire:click="showCounterDetails('ordersToday')" class="card" style="text-align: center; border-top: 3px solid var(--primary-color); padding: clamp(0.7rem, 2vw, 1rem); cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.03)'" onmouseout="this.style.transform='scale(1)'">
             <i class="fa-solid fa-receipt" style="color: var(--primary-color); margin-bottom: 0.5rem; font-size: clamp(1rem, 3vw, 1.5rem);"></i>
             <h3 style="color: var(--text-secondary); font-size: clamp(0.7rem, 2vw, 0.85rem);">طلبات اليوم</h3>
             <p style="font-size: clamp(1.3rem, 5vw, 2rem); font-weight: 800; color: var(--primary-color);">{{ $ordersToday }}</p>
         </div>
-        <div class="card" style="text-align: center; border-top: 3px solid var(--warning-color); padding: clamp(0.7rem, 2vw, 1rem);">
+        <div wire:click="showCounterDetails('activeOrders')" class="card" style="text-align: center; border-top: 3px solid var(--warning-color); padding: clamp(0.7rem, 2vw, 1rem); cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.03)'" onmouseout="this.style.transform='scale(1)'">
             <i class="fa-solid fa-fire-burner" style="color: var(--warning-color); margin-bottom: 0.5rem; font-size: clamp(1rem, 3vw, 1.5rem);"></i>
             <h3 style="color: var(--text-secondary); font-size: clamp(0.7rem, 2vw, 0.85rem);">نشطة</h3>
             <p style="font-size: clamp(1.3rem, 5vw, 2rem); font-weight: 800; color: var(--warning-color);">{{ $activeOrders }}</p>
         </div>
-        <div class="card" style="text-align: center; border-top: 3px solid var(--success-color); padding: clamp(0.7rem, 2vw, 1rem);">
+        <div wire:click="showCounterDetails('completedOrders')" class="card" style="text-align: center; border-top: 3px solid var(--success-color); padding: clamp(0.7rem, 2vw, 1rem); cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.03)'" onmouseout="this.style.transform='scale(1)'">
             <i class="fa-solid fa-check-circle" style="color: var(--success-color); margin-bottom: 0.5rem; font-size: clamp(1rem, 3vw, 1.5rem);"></i>
             <h3 style="color: var(--text-secondary); font-size: clamp(0.7rem, 2vw, 0.85rem);">مكتملة</h3>
             <p style="font-size: clamp(1.3rem, 5vw, 2rem); font-weight: 800; color: var(--success-color);">{{ $completedOrders }}</p>
@@ -34,8 +213,42 @@
         </div>
     </div>
 
+    <!-- Reception Stats Summary -->
+    <div style="margin-bottom: 1.5rem;">
+        <h2 style="font-size: clamp(0.95rem, 3vw, 1.15rem); margin-bottom: 0.8rem; display: flex; align-items: center; gap: 0.5rem;">
+            <i class="fa-solid fa-ticket" style="color: #9C27B0;"></i> إحصائيات الاستقبال — اليوم
+        </h2>
+        <div class="grid grid-cols-4" style="gap: 1rem;">
+            {{-- Total Tickets --}}
+            <div wire:click="showCounterDetails('todayTickets')" class="card" style="text-align: center; border-top: 3px solid #9C27B0; padding: clamp(0.7rem, 2vw, 1rem); cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.03)'" onmouseout="this.style.transform='scale(1)'">
+                <i class="fa-solid fa-ticket" style="color: #9C27B0; margin-bottom: 0.5rem; font-size: clamp(1rem, 3vw, 1.5rem);"></i>
+                <h3 style="color: var(--text-secondary); font-size: clamp(0.7rem, 2vw, 0.85rem);">إجمالي تذاكر اليوم</h3>
+                <p style="font-size: clamp(1.3rem, 5vw, 2rem); font-weight: 800; color: #9C27B0;">{{ $todayTickets->count() }}</p>
+            </div>
+            {{-- Active Tickets --}}
+            <div wire:click="showCounterDetails('todayTicketsActive')" class="card" style="text-align: center; border-top: 3px solid var(--warning-color); padding: clamp(0.7rem, 2vw, 1rem); cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.03)'" onmouseout="this.style.transform='scale(1)'">
+                <i class="fa-solid fa-hourglass-half" style="color: var(--warning-color); margin-bottom: 0.5rem; font-size: clamp(1rem, 3vw, 1.5rem);"></i>
+                <h3 style="color: var(--text-secondary); font-size: clamp(0.7rem, 2vw, 0.85rem);">في الانتظار (نشطة)</h3>
+                <p style="font-size: clamp(1.3rem, 5vw, 2rem); font-weight: 800; color: var(--warning-color);">{{ $todayTicketsActive }}</p>
+            </div>
+            {{-- Used Tickets --}}
+            <div wire:click="showCounterDetails('todayTicketsUsed')" class="card" style="text-align: center; border-top: 3px solid var(--success-color); padding: clamp(0.7rem, 2vw, 1rem); cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.03)'" onmouseout="this.style.transform='scale(1)'">
+                <i class="fa-solid fa-circle-check" style="color: var(--success-color); margin-bottom: 0.5rem; font-size: clamp(1rem, 3vw, 1.5rem);"></i>
+                <h3 style="color: var(--text-secondary); font-size: clamp(0.7rem, 2vw, 0.85rem);">تذاكر مُستخدمة</h3>
+                <p style="font-size: clamp(1.3rem, 5vw, 2rem); font-weight: 800; color: var(--success-color);">{{ $todayTicketsUsed }}</p>
+            </div>
+            {{-- Total People --}}
+            <div wire:click="showCounterDetails('todayTotalPeople')" class="card" style="text-align: center; border-top: 3px solid var(--info-color); padding: clamp(0.7rem, 2vw, 1rem); cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.03)'" onmouseout="this.style.transform='scale(1)'">
+                <i class="fa-solid fa-users" style="color: var(--info-color); margin-bottom: 0.5rem; font-size: clamp(1rem, 3vw, 1.5rem);"></i>
+                <h3 style="color: var(--text-secondary); font-size: clamp(0.7rem, 2vw, 0.85rem);">إجمالي الضيوف اليوم</h3>
+                <p style="font-size: clamp(1.3rem, 5vw, 2rem); font-weight: 800; color: var(--info-color);">{{ $todayTotalPeople }}</p>
+            </div>
+        </div>
+    </div>
+
     <!-- Inventory Summary -->
     <div style="margin-bottom: 1.5rem;">
+
         <h2 style="font-size: clamp(0.95rem, 3vw, 1.15rem); margin-bottom: 0.8rem; display: flex; align-items: center; gap: 0.5rem;">
             <i class="fa-solid fa-boxes-stacked" style="color: var(--primary-color);"></i> ملخص المخزون
             <span style="font-size: 0.7rem; color: var(--text-secondary); font-weight: 400;">(كل رأس = 20 جرام)</span>
@@ -191,15 +404,21 @@
                         <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
                             <td style="padding: 0.8rem; color: var(--text-secondary);">{{ $order->id }}</td>
                             <td style="padding: 0.8rem; font-weight: bold; color: var(--primary-color);">
-                                {{ $order->table->number }}
-                                @if($order->table && $order->table->section)
-                                    <span style="font-size: 0.8em; color: var(--text-secondary); font-weight: normal;">({{ $order->table->section }})</span>
+                                @if($order->table)
+                                    {{ $order->table->number }}
+                                    @if($order->table->section)
+                                        <span style="font-size: 0.8em; color: var(--text-secondary); font-weight: normal;">({{ $order->table->section }})</span>
+                                    @endif
+                                @elseif($order->source === 'self_service')
+                                    <span style="color: #9C27B0;"><i class="fa-solid fa-mobile-screen"></i> طلب ذاتي</span>
+                                @else
+                                    —
                                 @endif
                             </td>
                             <td style="padding: 0.8rem;">{{ $order->shisha_type }}</td>
                             <td style="padding: 0.8rem;">{{ $order->quantity }}</td>
                             <td style="padding: 0.8rem; font-size: 0.8rem; color: var(--text-secondary); max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ $order->notes ?? '—' }}</td>
-                            <td style="padding: 0.8rem; font-size: 0.85rem;">{{ $order->user->name }}</td>
+                            <td style="padding: 0.8rem; font-size: 0.85rem;">{{ $order->user?->name ?? 'طلب ذاتي' }}</td>
                                  <td style="padding: 0.8rem;">
                                 <div style="display: flex; gap: 8px; align-items: center; justify-content: flex-end; flex-wrap: wrap;">
                                     @php
@@ -215,6 +434,10 @@
                                     @if($order->cancel_requested)
                                         <span class="badge" style="background: rgba(255,152,0,0.2); color: var(--warning-color); border: 1px solid var(--warning-color);">
                                             <i class="fa-solid fa-hourglass-half"></i> طلب إلغاء
+                                        </span>
+                                    @elseif($order->cancel_duplicate_requested)
+                                        <span class="badge" style="background: rgba(156,39,176,0.2); color: #9C27B0; border: 1px solid #9C27B0;">
+                                            <i class="fa-solid fa-clone"></i> طلب إلغاء تكرار
                                         </span>
                                     @else
                                         <span class="badge badge-{{ $order->status }}">{{ $sLabel }}</span>
@@ -271,47 +494,141 @@
 
     </div>
 
-    <!-- Cancel Requests Section -->
-    @if($cancelRequests->count() > 0)
-    <div class="card" style="margin-top: 1.5rem; border: 2px solid var(--warning-color); background: rgba(255,152,0,0.03);">
-        <h3 style="margin-bottom: 1rem; color: var(--warning-color);">
-            <i class="fa-solid fa-triangle-exclamation"></i>
-            طلبات الإلغاء المعلقة <span style="background: var(--warning-color); color: #000; border-radius: 50%; padding: 2px 8px; font-size: 0.9rem;">{{ $cancelRequests->count() }}</span>
-        </h3>
-        <div style="overflow-x: auto; -webkit-overflow-scrolling: touch;">
-            <table class="data-table" style="min-width: 500px;">
-                <thead>
-                    <tr>
-                        <th>#</th>
-                        <th>الطاولة</th>
-                        <th>الطلب</th>
-                        <th>بواسطة</th>
-                        <th style="width: 220px;">الإجراء</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach($cancelRequests as $req)
-                    <tr wire:key="cancel-req-{{ $req->id }}" style="background: rgba(255,152,0,0.05);">
-                        <td style="font-weight: bold; color: var(--warning-color);">#{{ $req->id }}</td>
-                        <td>طاولة {{ $req->table->number ?? '-' }} @if($req->table && $req->table->section)<span style="font-size: 0.8rem; color: #777;">({{ $req->table->section }})</span>@endif</td>
-                        <td>{{ $req->quantity }}x {{ $req->shisha_type }}</td>
-                        <td>{{ $req->user->name ?? '-' }}</td>
-                        <td>
-                            <div style="display: flex; gap: 6px; flex-wrap: wrap;">
-                                <button wire:click="approveCancellation({{ $req->id }})" class="btn btn-sm" style="background: #4CAF50; color: #fff; border: none; padding: 0.4rem 0.8rem;" onclick="return confirm('موافقة على إلغاء الطلب، سيتم تحرير الطاولة. هل أنت متأكد؟')">
-                                    <i class="fa-solid fa-check"></i> موافقة
-                                </button>
-                                <button wire:click="rejectCancellation({{ $req->id }})" class="btn btn-sm" style="background: #F44336; color: #fff; border: none; padding: 0.4rem 0.8rem;">
-                                    <i class="fa-solid fa-xmark"></i> رفض
-                                </button>
-                            </div>
-                        </td>
-                    </tr>
-                    @endforeach
-                </tbody>
-            </table>
+    <!-- (Cancel requests were moved to the top) -->
+
+    <!-- end of approval requests (moved to top) -->
+
+    <!-- Reception Shortcut Card -->
+    <div class="card" style="margin-top: 1.5rem; border-top: 3px solid #9C27B0; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <div style="width: 48px; height: 48px; border-radius: 50%; background: rgba(156,39,176,0.15); display: flex; align-items: center; justify-content: center;">
+                <i class="fa-solid fa-ticket" style="color: #9C27B0; font-size: 1.3rem;"></i>
+            </div>
+            <div>
+                <div style="font-weight: 700; font-size: 1rem; color: #fff;">قسم الاستقبال</div>
+                <div style="font-size: 0.82rem; color: var(--text-secondary);">
+                    إصدار تذاكر اليوم — 
+                    <span style="color: #9C27B0; font-weight: bold;">{{ $todayTickets->count() }}</span> تذكرة
+                </div>
+            </div>
+        </div>
+        <a href="{{ route('admin.reception') }}" class="btn" style="background: linear-gradient(135deg, #9C27B0, #7B1FA2); color: #fff;">
+            <i class="fa-solid fa-arrow-left"></i> الانتقال لصفحة الاستقبال
+        </a>
+    </div>
+
+    @if($showDetailsModal)
+    <div class="modal" style="display: flex; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; justify-content: center; align-items: center;">
+        <div class="modal-content printable-modal" style="background: var(--surface-color); border-radius: 12px; width: 90%; max-width: 800px; max-height: 90vh; display: flex; flex-direction: column; overflow: hidden;">
+            <div class="no-print" style="display: flex; justify-content: space-between; align-items: center; padding: 1.5rem; border-bottom: 2px solid var(--border-color); background: rgba(255,255,255,0.03);">
+                <h2 style="font-size: 1.5rem; margin: 0;"><i class="fa-solid fa-list" style="color: var(--primary-color);"></i> {{ $detailsModalTitle }}</h2>
+                <div style="display: flex; gap: 10px;">
+                    <button onclick="window.print()" class="btn" style="background: var(--primary-color); color: #fff;"><i class="fa-solid fa-print"></i> طباعة</button>
+                    <button wire:click="closeDetailsModal" class="btn btn-outline" style="border-color: var(--danger-color); color: var(--danger-color);"><i class="fa-solid fa-times"></i> إغلاق</button>
+                </div>
+            </div>
+            
+            <div class="print-only-header" style="display: none; text-align: center; margin-bottom: 20px;">
+                <h2 style="color: #000; margin-bottom: 10px;">{{ $detailsModalTitle }}</h2>
+                <p style="color: #000;">التاريخ: {{ now()->format('Y-m-d H:i') }}</p>
+            </div>
+
+            <div style="padding: 1.5rem; overflow-y: auto; flex: 1;">
+                <table style="width: 100%; border-collapse: collapse; text-align: right; color: var(--text-color);">
+                    <thead>
+                        <tr style="background: rgba(255,255,255,0.05); border-bottom: 2px solid var(--border-color);">
+                            @if(in_array($detailsModalType, ['todayTickets', 'todayTicketsActive', 'todayTicketsUsed']))
+                                <th style="padding: 12px;">الباركود</th>
+                                <th style="padding: 12px;">النوع</th>
+                                <th style="padding: 12px;">العدد</th>
+                                <th style="padding: 12px;">الوقت</th>
+                                <th style="padding: 12px;">الموظف</th>
+                            @else
+                                <th style="padding: 12px;">رقم الطلب</th>
+                                <th style="padding: 12px;">الصنف</th>
+                                <th style="padding: 12px;">الكمية</th>
+                                @if($detailsModalType === 'todayTotalPeople')
+                                    <th style="padding: 12px;">اسم الضيف</th>
+                                @else
+                                    <th style="padding: 12px;">الطاولة</th>
+                                @endif
+                                <th style="padding: 12px;">الوقت</th>
+                                <th style="padding: 12px;">الموظف</th>
+                            @endif
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($detailsModalData as $row)
+                            <tr style="border-bottom: 1px solid var(--border-color);">
+                            @if(in_array($detailsModalType, ['todayTickets', 'todayTicketsActive', 'todayTicketsUsed']))
+                                <td style="padding: 12px; font-weight: bold; color: var(--info-color);">{{ $row['barcode'] }}</td>
+                                <td style="padding: 12px;">{{ $row['ticket_template']['name'] ?? 'تذكرة عادية' }}</td>
+                                <td style="padding: 12px;">{{ $row['num_people'] ?? 1 }}</td>
+                                <td style="padding: 12px;">{{ \Carbon\Carbon::parse($row['created_at'])->format('h:i A') }}</td>
+                                <td style="padding: 12px;">{{ $row['user']['name'] ?? 'غير معروف' }}</td>
+                            @else
+                                <td style="padding: 12px; font-weight: bold;">#{{ $row['id'] }}</td>
+                                <td style="padding: 12px;">{{ $row['shisha_type'] }}</td>
+                                <td style="padding: 12px;">{{ $row['quantity'] }}</td>
+                                @if($detailsModalType === 'todayTotalPeople')
+                                    <td style="padding: 12px; color: var(--info-color); font-weight: bold;">{{ $row['guest_name'] }}</td>
+                                @else
+                                    <td style="padding: 12px;">{{ isset($row['table']) && $row['table'] ? $row['table']['number'] : 'أخرى' }}</td>
+                                @endif
+                                <td style="padding: 12px;">{{ \Carbon\Carbon::parse($row['created_at'])->format('h:i A') }}</td>
+                                <td style="padding: 12px;">{{ $row['user']['name'] ?? 'غير معروف' }}</td>
+                            @endif
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="6" style="text-align: center; padding: 2rem; color: var(--text-secondary);">لا توجد بيانات متاحة</td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
     @endif
 
+    <style>
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            .printable-modal, .printable-modal * {
+                visibility: visible;
+                color: #000 !important; /* Force black color for printing */
+            }
+            .printable-modal {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100% !important;
+                max-width: 100% !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                box-shadow: none !important;
+                border: none !important;
+                background: white !important;
+            }
+            .printable-modal table {
+                border-collapse: collapse;
+                width: 100%;
+            }
+            .printable-modal th, .printable-modal td {
+                border: 1px solid #ddd !important;
+                padding: 8px !important;
+            }
+            .printable-modal th {
+                background-color: #f2f2f2 !important;
+            }
+            .no-print {
+                display: none !important;
+            }
+            .print-only-header {
+                display: block !important;
+            }
+        }
+    </style>
 </div>

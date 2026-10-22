@@ -1,7 +1,7 @@
 {
-  "name": "لاونج الشيشة",
-  "short_name": "شيشة",
-  "description": "نظام إدارة صالة الشيشة",
+  "name": "مارس سوفت",
+  "short_name": "مارس",
+  "description": "نظام مارس سوفت للإدارة",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0d0d0d",

@@ -22,16 +22,7 @@ class DeliveryBoard extends Component
             $order->status = 'delivered';
             $order->save();
             
-            $table = Table::find($order->table_id);
-            if ($table) {
-                $hasActiveOrders = Order::where('table_id', $table->id)
-                    ->whereIn('status', ['pending', 'prep', 'ready'])
-                    ->exists();
-                if (!$hasActiveOrders) {
-                    $table->status = 'empty';
-                }
-                $table->save();
-            }
+            $order->releaseTableAndChairIfEmpty();
 
             $this->dispatch('delivery-done-sound');
         }
@@ -51,14 +42,25 @@ class DeliveryBoard extends Component
     {
         $order = Order::find($orderId);
         if ($order) {
-            $this->dispatch('print-receipt-silent', orderId: $order->id);
-            session()->flash('success', 'تم إرسال أمر طباعة الفاتورة للطلب #' . $order->id);
+            $printUrl = route('invoice.print', ['order' => $order->id, 'auto' => 1]);
+            $this->dispatch('print-invoice', url: $printUrl);
+            session()->flash('success', 'تم فتح صفحة طباعة الفاتورة للطلب #' . $order->id);
         }
     }
 
     public function render()
     {
-        $readyOrders = Order::with('table', 'user')->where('status', 'ready')->orderBy('updated_at', 'asc')->get();
+        $user = auth()->user();
+        $assignedKitchens = $user->assigned_kitchens ?? [];
+
+        $query = Order::with('table', 'user')->where('status', 'ready');
+        
+        if (!empty($assignedKitchens)) {
+            $query->whereIn('target_kitchen', $assignedKitchens);
+        }
+        
+        $readyOrders = $query->orderBy('updated_at', 'asc')->get();
+        $groupedOrders = $readyOrders->groupBy('target_kitchen');
         
         // Tables that have all their orders delivered, or are occupied
         $occupiedTables = Table::whereNotIn('status', ['empty'])->get();
@@ -72,6 +74,7 @@ class DeliveryBoard extends Component
 
         return view('livewire.delivery-board', [
             'readyOrders' => $readyOrders,
+            'groupedOrders' => $groupedOrders,
             'occupiedTables' => $occupiedTables,
         ])->layout('components.layouts.app');
     }

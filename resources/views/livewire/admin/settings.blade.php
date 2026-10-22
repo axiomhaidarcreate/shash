@@ -45,101 +45,28 @@
                     </div>
                 </div>
                 
-            <!-- Printer Settings -->
-            <div style="background: rgba(255,255,255,0.02); padding: 1rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); margin-top: 1.5rem;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                    <h4 style="color: var(--text-secondary); margin: 0;"><i class="fa-solid fa-print"></i> إعدادات طابعات الشبكة المحلية</h4>
-                    <div style="display: flex; gap: 10px; align-items: center;">
-                        <span style="font-size: 0.8rem; color: var(--text-secondary);">مفتاح وكيل الطباعة (API Token)</span>
-                        <input type="text" wire:model="print_api_token" class="form-control" style="width: 250px; background-color: #111; color: var(--warning-color); font-family: monospace; font-size: 0.85rem;" readonly>
-                    </div>
-                </div>
-                
-                <!-- Printers IPs & Statuses -->
-                <div class="grid grid-cols-3" style="gap: 1rem; margin-bottom: 1.5rem; padding-bottom: 1.5rem; border-bottom: 1px dashed var(--border-color);">
-                    <!-- Cashier Printer -->
-                    <div style="background: rgba(0,0,0,0.3); padding: 1rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-                            <label class="form-label" style="color: var(--primary-color);">طابعة الكاشير</label>
-                            <span class="badge" style="background-color: {{ $printer_cashier_status == 'Online' ? 'var(--success-color)' : ($printer_cashier_status == 'Error' ? 'var(--danger-color)' : '#555') }}; color: #fff; font-size: 0.7rem;">{{ $printer_cashier_status }}</span>
-                        </div>
-                        <input type="text" wire:model="printer_cashier_ip" class="form-control" dir="ltr" placeholder="192.168.8.189">
-                        <button wire:click="printTest('cashier')" type="button" class="btn btn-sm" style="margin-top: 10px; width: 100%; background-color: var(--info-color); color: #fff;">تجربة طباعة</button>
-                    </div>
 
-                    <!-- Kitchen Printer -->
-                    <div style="background: rgba(0,0,0,0.3); padding: 1rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-                            <label class="form-label" style="color: var(--warning-color);">طابعة المطبخ</label>
-                            <span class="badge" style="background-color: {{ $printer_kitchen_status == 'Online' ? 'var(--success-color)' : ($printer_kitchen_status == 'Error' ? 'var(--danger-color)' : '#555') }}; color: #fff; font-size: 0.7rem;">{{ $printer_kitchen_status }}</span>
-                        </div>
-                        <input type="text" wire:model="printer_kitchen_ip" class="form-control" dir="ltr" placeholder="مثال: 192.168.8.190">
-                        <button wire:click="printTest('kitchen')" type="button" class="btn btn-sm" style="margin-top: 10px; width: 100%; background-color: var(--warning-color); color: #fff;">تجربة طباعة</button>
-                    </div>
-
-                    <!-- Shisha Printer -->
-                    <div style="background: rgba(0,0,0,0.3); padding: 1rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-                            <label class="form-label" style="color: #9C27B0;">طابعة الشيشة</label>
-                            <span class="badge" style="background-color: {{ $printer_shisha_status == 'Online' ? 'var(--success-color)' : ($printer_shisha_status == 'Error' ? 'var(--danger-color)' : '#555') }}; color: #fff; font-size: 0.7rem;">{{ $printer_shisha_status }}</span>
-                        </div>
-                        <input type="text" wire:model="printer_shisha_ip" class="form-control" dir="ltr" placeholder="مثال: 192.168.8.191">
-                        <button wire:click="printTest('shisha')" type="button" class="btn btn-sm" style="margin-top: 10px; width: 100%; background-color: #9C27B0; color: #fff;">تجربة طباعة</button>
-                    </div>
-                </div>
-
-                <!-- Global Printer Settings -->
-                <h5 style="color: var(--text-secondary); margin-bottom: 1rem;">إعدادات الطباعة العامة (تطبق على جميع الطابعات)</h5>
-                <div class="grid grid-cols-3" style="gap: 1rem;">
-                    <div class="form-group">
-                        <label class="form-label">نوع الاتصال</label>
-                        <select wire:model="printer_connection_type" class="form-control" style="background-color: #111;">
-                            <option value="Network">Network / Ethernet</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">المنفذ الافتراضي (Port)</label>
-                        <input type="text" wire:model="printer_port" class="form-control" dir="ltr" placeholder="9100">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">حجم الورق</label>
-                        <select wire:model="printer_paper_size" class="form-control" style="background-color: #111;">
-                            <option value="80mm">80mm</option>
-                            <option value="72mm">72mm</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">ترميز الحروف</label>
-                        <select wire:model="printer_encoding" class="form-control" style="background-color: #111;">
-                            <option value="UTF-8">UTF-8</option>
-                            <option value="CP864">CP864 (للطباعة العربية)</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">كثافة الطباعة</label>
-                        <select wire:model="printer_density" class="form-control" style="background-color: #111;">
-                            <option value="Light">خفيف</option>
-                            <option value="Medium">متوسط (Medium)</option>
-                            <option value="Dark">داكن</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-2" style="gap: 1rem; margin-top: 1rem;">
-                    <div class="form-group" style="display: flex; align-items: center; gap: 10px;">
-                        <input type="checkbox" wire:model="printer_auto_cut" id="autoCutCheck" style="width: 20px; height: 20px; accent-color: var(--primary-color);">
-                        <label for="autoCutCheck" style="cursor: pointer; font-weight: 600;">القص الآلي (Auto Cut)</label>
-                    </div>
-                    <div class="form-group" style="display: flex; align-items: center; gap: 10px;">
-                        <input type="checkbox" wire:model="printer_cash_drawer" id="cashDrawerCheck" style="width: 20px; height: 20px; accent-color: var(--primary-color);">
-                        <label for="cashDrawerCheck" style="cursor: pointer; font-weight: 600;">فتح درج الكاشير (للكاشير فقط)</label>
-                    </div>
-                </div>
-            </div>
                 
                 <div class="form-group" style="display: flex; align-items: center; gap: 10px; margin-top: 1rem;">
                     <input type="checkbox" wire:model="notifications_enabled" id="notifCheck" style="width: 20px; height: 20px; accent-color: var(--primary-color);">
                     <label for="notifCheck" style="cursor: pointer; font-weight: 600;">تفعيل الإشعارات الصوتية والتنبيهات</label>
+                </div>
+
+                <div class="form-group" style="margin-top: 1.5rem; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 1rem;">
+                    <label class="form-label" style="display: flex; align-items: center; gap: 8px;">
+                        <i class="fa-solid fa-palette"></i> مظهر النظام (الثيم)
+                    </label>
+                    <select wire:model="app_theme" class="form-control" style="max-width: 300px;">
+                        <option value="dark">الوضع الليلي (الافتراضي - أسود)</option>
+                        <option value="light">الوضع النهاري (أبيض)</option>
+                    </select>
+                </div>
+                
+                <div class="form-group" style="margin-top: 1.5rem; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 1rem;">
+                    <label class="form-label" style="display: flex; align-items: center; gap: 8px;">
+                        <i class="fa-solid fa-key"></i> رمز موافقة المدير (لموظف الاستقبال)
+                    </label>
+                    <input type="text" wire:model="manager_pin" class="form-control" style="max-width: 300px;" placeholder="مثال: 7925">
                 </div>
             </div>
         </div>
@@ -147,6 +74,135 @@
         <div style="margin-top: 1rem; text-align: left;">
             <button wire:click="saveGeneralSettings" class="btn btn-success" style="padding: 0.8rem 2rem;">
                 <i class="fa-solid fa-save"></i> حفظ الإعدادات العامة
+            </button>
+        </div>
+    </div>
+
+    <!-- Messaging Settings Card -->
+    <div class="card" style="margin-bottom: 1.5rem;">
+        <h3 style="margin-bottom: 1.2rem;"><i class="fa-brands fa-whatsapp" style="color: #25D366;"></i> إعدادات المراسلة (WhatsApp / SMS)</h3>
+        <p style="color: var(--text-secondary); margin-bottom: 1.5rem; font-size: 0.9rem;">إعدادات ربط النظام مع مزود خدمة الرسائل لإرسال التنبيهات واشتراكات العملاء. استخدم <code>@{{phone}}</code> و <code>@{{message}}</code> كمتغيرات في الرابط.</p>
+        
+        <div class="form-group" style="display: flex; align-items: center; gap: 10px; margin-bottom: 1.5rem;">
+            <input type="checkbox" wire:model="messaging_enabled" id="msgCheck" style="width: 20px; height: 20px; accent-color: var(--primary-color);">
+            <label for="msgCheck" style="cursor: pointer; font-weight: 600;">تفعيل إرسال الرسائل للعملاء</label>
+        </div>
+
+        @if($messaging_enabled)
+        <div class="grid grid-cols-2">
+            <div class="form-group">
+                <label class="form-label">نوع المراسلة</label>
+                <select wire:model="messaging_type" class="form-control">
+                    <option value="whatsapp">واتساب (WhatsApp)</option>
+                    <option value="sms">رسائل نصية قصيرة (SMS)</option>
+                </select>
+            </div>
+            <div class="form-group" style="grid-column: span 2;">
+                <label class="form-label">رابط الـ API (مع المتغيرات)</label>
+                <textarea wire:model="messaging_api_url" class="form-control" rows="2" placeholder="مثال: https://api.whatsapp.com/send?phone={{'@'}}phone&text={{'@'}}message" dir="ltr"></textarea>
+                <small style="color: var(--text-secondary); display: block; margin-top: 5px;">مثال Jawaly: <code>https://api.jawaly.net/api/v1/sendsms?user=X&pass=Y&to={{'@'}}phone&message={{'@'}}message</code></small>
+            </div>
+        </div>
+
+        <div style="margin-top: 1.5rem; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 1rem;">
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 1.2rem;">
+                <h4 style="margin: 0; color: var(--text-secondary);"><i class="fa-solid fa-file-lines"></i> قوالب رسائل الواتساب</h4>
+                <span style="font-size: 0.8rem; color: #888; background: rgba(255,255,255,0.05); padding: 2px 8px; border-radius: 20px;">اتركها فارغة لاستخدام النصوص الافتراضية</span>
+            </div>
+
+            {{-- Template 1: Welcome --}}
+            <div style="background: rgba(37,211,102,0.04); border: 1px solid rgba(37,211,102,0.15); border-radius: var(--radius-sm); padding: 1rem; margin-bottom: 1rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.6rem;">
+                    <label class="form-label" style="margin: 0; display: flex; align-items: center; gap: 6px;">
+                        <i class="fa-solid fa-hand-wave" style="color: #25D366;"></i> رسالة الترحيب (عند التسجيل)
+                    </label>
+                    <button type="button" wire:click="useDefaultWelcomeTemplate" style="background: rgba(37,211,102,0.15); border: 1px solid rgba(37,211,102,0.4); color: #25D366; padding: 3px 10px; border-radius: 20px; font-size: 0.78rem; cursor: pointer; white-space: nowrap;">
+                        <i class="fa-solid fa-rotate-left" style="font-size: 0.7rem;"></i> استخدم الافتراضي
+                    </button>
+                </div>
+                <textarea wire:model="whatsapp_welcome_template" class="form-control" rows="4" dir="rtl"
+                    placeholder="مرحباً بك *{name}* في برنامج الولاء! 🎉&#10;&#10;🔑 رقم اشتراكك: *{subscription_number}*&#10;📱 احتفظ بهذا الرقم لتتبع نقاطك.{offer_details}&#10;&#10;نسعد بخدمتك دائماً! 💛"
+                    style="font-size: 0.9rem; line-height: 1.6;"></textarea>
+                <small style="color: #888; display: block; margin-top: 5px;">المتغيرات: <code style="background:rgba(255,255,255,0.08); padding: 1px 5px; border-radius: 3px;">{name}</code> <code style="background:rgba(255,255,255,0.08); padding: 1px 5px; border-radius: 3px;">{subscription_number}</code> <code style="background:rgba(255,255,255,0.08); padding: 1px 5px; border-radius: 3px;">{offer_details}</code></small>
+            </div>
+
+            {{-- Template 2: Points Update --}}
+            <div style="background: rgba(33,150,243,0.04); border: 1px solid rgba(33,150,243,0.15); border-radius: var(--radius-sm); padding: 1rem; margin-bottom: 1rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.6rem;">
+                    <label class="form-label" style="margin: 0; display: flex; align-items: center; gap: 6px;">
+                        <i class="fa-solid fa-star" style="color: #2196F3;"></i> رسالة إضافة النقاط
+                    </label>
+                    <button type="button" wire:click="useDefaultPointsTemplate" style="background: rgba(33,150,243,0.15); border: 1px solid rgba(33,150,243,0.4); color: #2196F3; padding: 3px 10px; border-radius: 20px; font-size: 0.78rem; cursor: pointer; white-space: nowrap;">
+                        <i class="fa-solid fa-rotate-left" style="font-size: 0.7rem;"></i> استخدم الافتراضي
+                    </button>
+                </div>
+                <textarea wire:model="whatsapp_points_updated_template" class="form-control" rows="4" dir="rtl"
+                    placeholder="مرحباً *{name}* 👋&#10;&#10;✅ تم إضافة *{points_added}* نقطة إلى حسابك{reason}&#10;&#10;📊 رصيدك الحالي: *{remaining_points}* نقطة&#10;{next_reward}&#10;شكراً لزيارتك! 💛"
+                    style="font-size: 0.9rem; line-height: 1.6;"></textarea>
+                <small style="color: #888; display: block; margin-top: 5px;">المتغيرات: <code style="background:rgba(255,255,255,0.08); padding: 1px 5px; border-radius: 3px;">{name}</code> <code style="background:rgba(255,255,255,0.08); padding: 1px 5px; border-radius: 3px;">{points_added}</code> <code style="background:rgba(255,255,255,0.08); padding: 1px 5px; border-radius: 3px;">{reason}</code> <code style="background:rgba(255,255,255,0.08); padding: 1px 5px; border-radius: 3px;">{remaining_points}</code> <code style="background:rgba(255,255,255,0.08); padding: 1px 5px; border-radius: 3px;">{next_reward}</code></small>
+            </div>
+
+            {{-- Template 3: Reward Redemption --}}
+            <div style="background: rgba(212,175,55,0.04); border: 1px solid rgba(212,175,55,0.15); border-radius: var(--radius-sm); padding: 1rem; margin-bottom: 1rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.6rem;">
+                    <label class="form-label" style="margin: 0; display: flex; align-items: center; gap: 6px;">
+                        <i class="fa-solid fa-gift" style="color: var(--primary-color);"></i> رسالة استبدال المكافأة
+                    </label>
+                    <button type="button" wire:click="useDefaultRedemptionTemplate" style="background: rgba(212,175,55,0.15); border: 1px solid rgba(212,175,55,0.4); color: var(--primary-color); padding: 3px 10px; border-radius: 20px; font-size: 0.78rem; cursor: pointer; white-space: nowrap;">
+                        <i class="fa-solid fa-rotate-left" style="font-size: 0.7rem;"></i> استخدم الافتراضي
+                    </button>
+                </div>
+                <textarea wire:model="whatsapp_reward_reached_template" class="form-control" rows="4" dir="rtl"
+                    placeholder="مرحباً *{name}* 🎉&#10;&#10;🎁 تم استبدال *{points_used}* نقطة بنجاح!&#10;📦 المكافأة: *{reward_name}*&#10;&#10;📊 رصيدك المتبقي: *{remaining_points}* نقطة&#10;&#10;استمر في جمع النقاط للحصول على مكافآت أكثر! 💛"
+                    style="font-size: 0.9rem; line-height: 1.6;"></textarea>
+                <small style="color: #888; display: block; margin-top: 5px;">المتغيرات: <code style="background:rgba(255,255,255,0.08); padding: 1px 5px; border-radius: 3px;">{name}</code> <code style="background:rgba(255,255,255,0.08); padding: 1px 5px; border-radius: 3px;">{points_used}</code> <code style="background:rgba(255,255,255,0.08); padding: 1px 5px; border-radius: 3px;">{reward_name}</code> <code style="background:rgba(255,255,255,0.08); padding: 1px 5px; border-radius: 3px;">{remaining_points}</code></small>
+            </div>
+        </div>
+        @endif
+
+        <div style="margin-top: 1rem; text-align: left;">
+            <button wire:click="saveGeneralSettings" class="btn btn-success" style="padding: 0.8rem 2rem;">
+                <i class="fa-solid fa-save"></i> حفظ إعدادات المراسلة
+            </button>
+        </div>
+    </div>
+
+    <div class="card" style="margin-bottom: 1.5rem; background: linear-gradient(145deg, #1f1f1f, #252525); border: 1px solid var(--border-color);">
+        <h3 style="margin-bottom: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.5rem;">
+            <i class="fa-solid fa-toggle-on" style="color: var(--primary-color);"></i> التحكم اليدوي بالفترة المحاسبية
+        </h3>
+
+        <div style="text-align: center; margin: 1.5rem 0;">
+            <div style="font-size: 1.1rem; color: var(--text-secondary); margin-bottom: 0.5rem;">حالة الفترة المحاسبية الآن:</div>
+            @if($activeShift)
+                <div style="display: inline-block; background: rgba(76,175,80,0.15); border: 2px solid #4CAF50; color: #4CAF50; padding: 0.5rem 1.5rem; border-radius: 50px; font-weight: bold; font-size: 1.2rem;">
+                    <i class="fa-solid fa-door-open"></i> الفترة المحاسبية مفتوحة
+                </div>
+                <div style="font-size: 0.85rem; color: #888; margin-top: 0.5rem;">
+                    تم الفتح بواسطة: {{ $activeShift->openedBy->name ?? 'النظام الآلي' }}<br>
+                    الوقت: {{ $activeShift->opened_at->format('Y-m-d h:i A') }}
+                </div>
+            @else
+                <div style="display: inline-block; background: rgba(244,67,54,0.15); border: 2px solid #F44336; color: #F44336; padding: 0.5rem 1.5rem; border-radius: 50px; font-weight: bold; font-size: 1.2rem;">
+                    <i class="fa-solid fa-door-closed"></i> الفترة المحاسبية مغلقة
+                </div>
+            @endif
+        </div>
+
+        <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+            <button wire:click="startShiftManual" 
+                    class="btn" 
+                    style="flex: 1; background: #4CAF50; color: white; padding: 1rem; font-size: 1.1rem;"
+                    {{ $activeShift ? 'disabled' : '' }}>
+                <i class="fa-solid fa-play"></i> بدء العمل الآن (فتح للجميع)
+            </button>
+
+            <button wire:click="closeShiftManual" 
+                    class="btn" 
+                    style="flex: 1; background: #F44336; color: white; padding: 1rem; font-size: 1.1rem;"
+                    onclick="return confirm('هل أنت متأكد من إغلاق الفترة المحاسبية لجميع الموظفين؟ سيتم إغلاق يومياتهم ورفع التقارير.')"
+                    {{ !$activeShift ? 'disabled' : '' }}>
+                <i class="fa-solid fa-stop"></i> إغلاق العمل الآن (إغلاق للجميع)
             </button>
         </div>
     </div>
@@ -253,91 +309,230 @@
     <div class="card" style="margin-top: 1.5rem; background: linear-gradient(145deg, #1f1f1f, #252525); border: 1px solid #333;">
         <h3 style="margin-bottom: 1rem;"><i class="fa-solid fa-border-all" style="color: var(--primary-color);"></i> جميع الطاولات</h3>
 
-        <div style="overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: var(--radius-sm); border: 1px solid rgba(255,255,255,0.05); margin: 0 -0.5rem; padding: 0 0.5rem;">
-            <table class="data-table" style="min-width: 480px; background-color: #222;">
-                <thead style="background-color: #2a2a2a;">
-                    <tr>
-                        <th>الرقم</th>
-                        <th>المقاعد</th>
-                        <th>القسم</th>
-                        <th>الحالة</th>
-                        <th style="width: 150px;">الإجراءات</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach($tables as $table)
-                    @php
-                        $statusLabel = match($table->status) {
-                            'empty' => 'فارغة',
-                            'customer_seated' => 'يوجد عميل',
-                            'order_prep' => 'قيد التحضير',
-                            'order_ready' => 'جاهز',
-                            'delivered' => 'تم التسليم',
-                        };
-                        $statusClass = match($table->status) {
-                            'empty' => 'badge-inactive',
-                            'customer_seated' => 'badge-pending',
-                            'order_prep' => 'badge-prep',
-                            'order_ready' => 'badge-ready',
-                            'delivered' => 'badge-delivered',
-                        };
-                    @endphp
-                    
-                    @if($editingTableId === $table->id)
-                    <tr style="background-color: rgba(212, 175, 55, 0.1);" wire:key="table-edit-{{ $table->id }}">
-                        <td>
-                            <input type="text" wire:model="editTableNumber" class="form-control" style="padding: 0.5rem; font-size: 0.9rem; background: #000; border: 1px solid var(--primary-color); color: #fff;">
-                        </td>
-                        <td>
-                            <input type="number" wire:model="editTableCapacity" class="form-control" style="padding: 0.5rem; font-size: 0.9rem; max-width: 80px; background: #000; border: 1px solid var(--primary-color); color: #fff;">
-                        </td>
-                        <td>
-                            <select wire:model="editTableSection" class="form-control" style="padding: 0.5rem; font-size: 0.9rem; background: #000; border: 1px solid var(--primary-color); color: #fff; height: 38px; min-height: 38px;">
-                                <option value="">-- اختر القسم/الصالة --</option>
-                                @foreach($sections as $sec)
-                                    <option value="{{ $sec->name }}">{{ $sec->name }}</option>
-                                @endforeach
-                            </select>
-                            @error('editTableSection') <span style="color: var(--danger-color); font-size: 0.8rem;">{{ $message }}</span> @enderror
-                        </td>
-                        <td><span class="badge {{ $statusClass }}" style="white-space: nowrap;">{{ $statusLabel }}</span></td>
-                        <td>
-                            <div style="display: flex; gap: 6px; white-space: nowrap;">
-                                <button wire:click="updateTable" class="btn btn-sm btn-success" style="padding: 0.4rem 0.8rem;" title="حفظ">
-                                    <i class="fa-solid fa-check"></i> حفظ
-                                </button>
-                                <button wire:click="cancelEdit" class="btn btn-sm" style="background: #444; color: #fff; padding: 0.4rem 0.8rem;" title="إلغاء">
-                                    <i class="fa-solid fa-xmark"></i> إلغاء
-                                </button>
-                            </div>
-                        </td>
-                    </tr>
-                    @else
-                    <tr wire:key="table-view-{{ $table->id }}">
-                        <td style="font-weight: 700; color: var(--primary-color);">{{ $table->number }}</td>
-                        <td>{{ $table->capacity }} <span style="color: var(--text-secondary);">مقاعد</span></td>
-                        <td>{{ $table->section ?? '—' }}</td>
-                        <td><span class="badge {{ $statusClass }}" style="white-space: nowrap;">{{ $statusLabel }}</span></td>
-                        <td>
-                            <div style="display: flex; gap: 6px; white-space: nowrap;">
-                                <button wire:click="editTable({{ $table->id }})" class="btn btn-sm" title="تعديل" style="background: #2196F3; color: #fff; border: none; padding: 0.4rem 0.8rem;">
-                                    <i class="fa-solid fa-pen"></i> تعديل
-                                </button>
-                                @if($table->status !== 'empty')
-                                    <button wire:click="resetTable({{ $table->id }})" class="btn btn-sm" title="إعادة تعيين" style="background: #FF9800; color: #fff; border: none; padding: 0.4rem 0.8rem;">
-                                        <i class="fa-solid fa-rotate-left"></i> تفريغ
+        @php
+            $tablesBySection = $tables->groupBy('section');
+        @endphp
+
+        @forelse($sections as $sec)
+            @php
+                $sectionTables = ($tablesBySection[$sec->name] ?? collect())->sortBy('sort_order');
+            @endphp
+            @if($sectionTables->isNotEmpty())
+            <div style="margin-bottom: 1.5rem;">
+                <div style="background: rgba(212, 175, 55, 0.08); border: 1px solid rgba(212, 175, 55, 0.25); border-radius: var(--radius-sm); padding: 0.6rem 1rem; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 8px;">
+                    <i class="fa-solid fa-layer-group" style="color: var(--primary-color);"></i>
+                    <span style="font-weight: 700; font-size: 1rem; color: var(--primary-color);">{{ $sec->name }}</span>
+                    <span style="color: var(--text-secondary); font-size: 0.85rem; margin-right: auto;">({{ $sectionTables->count() }} طاولة)</span>
+                </div>
+
+                <div style="overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: var(--radius-sm); border: 1px solid rgba(255,255,255,0.05);">
+                    <table class="data-table" style="min-width: 520px; background-color: #222;">
+                        <thead style="background-color: #2a2a2a;">
+                            <tr>
+                                <th style="width: 70px;">الترتيب</th>
+                                <th>الرقم</th>
+                                <th>المقاعد</th>
+                                <th>الحالة</th>
+                                <th style="width: 200px;">الإجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($sectionTables as $table)
+                            @php
+                                $statusLabel = match($table->status) {
+                                    'empty' => 'فارغة',
+                                    'customer_seated' => 'يوجد عميل',
+                                    'order_prep' => 'قيد التحضير',
+                                    'order_ready' => 'جاهز',
+                                    'delivered' => 'تم التسليم',
+                                };
+                                $statusClass = match($table->status) {
+                                    'empty' => 'badge-inactive',
+                                    'customer_seated' => 'badge-pending',
+                                    'order_prep' => 'badge-prep',
+                                    'order_ready' => 'badge-ready',
+                                    'delivered' => 'badge-delivered',
+                                };
+                            @endphp
+                            
+                            @if($editingTableId === $table->id)
+                            <tr style="background-color: rgba(212, 175, 55, 0.1);" wire:key="table-edit-{{ $table->id }}">
+                                <td>
+                                    <div style="display: flex; flex-direction: column; gap: 2px; align-items: center;">
+                                        <button wire:click="moveTableUp({{ $table->id }})" class="btn btn-sm btn-ghost" style="padding: 2px 8px; min-height: 24px; height: 24px; line-height: 1;" title="تحريك لأعلى" @if($loop->first) disabled @endif>
+                                            <i class="fa-solid fa-chevron-up" style="font-size: 0.7rem; color: var(--primary-color);"></i>
+                                        </button>
+                                        <button wire:click="moveTableDown({{ $table->id }})" class="btn btn-sm btn-ghost" style="padding: 2px 8px; min-height: 24px; height: 24px; line-height: 1;" title="تحريك لأسفل" @if($loop->last) disabled @endif>
+                                            <i class="fa-solid fa-chevron-down" style="font-size: 0.7rem; color: var(--primary-color);"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                                <td>
+                                    <input type="text" wire:model="editTableNumber" class="form-control" style="padding: 0.5rem; font-size: 0.9rem; background: #000; border: 1px solid var(--primary-color); color: #fff;">
+                                </td>
+                                <td>
+                                    <input type="number" wire:model="editTableCapacity" class="form-control" style="padding: 0.5rem; font-size: 0.9rem; max-width: 80px; background: #000; border: 1px solid var(--primary-color); color: #fff;">
+                                </td>
+                                <td><span class="badge {{ $statusClass }}" style="white-space: nowrap;">{{ $statusLabel }}</span></td>
+                                <td>
+                                    <div style="display: flex; gap: 6px; white-space: nowrap; flex-wrap: wrap;">
+                                        <select wire:model="editTableSection" class="form-control" style="padding: 0.3rem 0.5rem; font-size: 0.85rem; background: #000; border: 1px solid var(--primary-color); color: #fff; height: 34px; min-height: 34px; max-width: 130px;">
+                                            <option value="">-- القسم --</option>
+                                            @foreach($sections as $s)
+                                                <option value="{{ $s->name }}">{{ $s->name }}</option>
+                                            @endforeach
+                                        </select>
+                                        <button wire:click="updateTable" class="btn btn-sm btn-success" style="padding: 0.4rem 0.8rem;" title="حفظ">
+                                            <i class="fa-solid fa-check"></i> حفظ
+                                        </button>
+                                        <button wire:click="cancelEdit" class="btn btn-sm" style="background: #444; color: #fff; padding: 0.4rem 0.8rem;" title="إلغاء">
+                                            <i class="fa-solid fa-xmark"></i> إلغاء
+                                        </button>
+                                    </div>
+                                    @error('editTableSection') <span style="color: var(--danger-color); font-size: 0.8rem;">{{ $message }}</span> @enderror
+                                </td>
+                            </tr>
+                            @else
+                            <tr wire:key="table-view-{{ $table->id }}">
+                                <td>
+                                    <div style="display: flex; flex-direction: column; gap: 2px; align-items: center;">
+                                        <button wire:click="moveTableUp({{ $table->id }})" class="btn btn-sm btn-ghost" style="padding: 2px 8px; min-height: 24px; height: 24px; line-height: 1;" title="تحريك لأعلى" @if($loop->first) disabled @endif>
+                                            <i class="fa-solid fa-chevron-up" style="font-size: 0.7rem; color: var(--primary-color);"></i>
+                                        </button>
+                                        <button wire:click="moveTableDown({{ $table->id }})" class="btn btn-sm btn-ghost" style="padding: 2px 8px; min-height: 24px; height: 24px; line-height: 1;" title="تحريك لأسفل" @if($loop->last) disabled @endif>
+                                            <i class="fa-solid fa-chevron-down" style="font-size: 0.7rem; color: var(--primary-color);"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                                <td style="font-weight: 700; color: var(--primary-color);">{{ $table->number }}</td>
+                                <td>{{ $table->capacity }} <span style="color: var(--text-secondary);">مقاعد</span></td>
+                                <td><span class="badge {{ $statusClass }}" style="white-space: nowrap;">{{ $statusLabel }}</span></td>
+                                <td>
+                                    <div style="display: flex; gap: 6px; white-space: nowrap;">
+                                        <button wire:click="editTable({{ $table->id }})" class="btn btn-sm" title="تعديل" style="background: #2196F3; color: #fff; border: none; padding: 0.4rem 0.8rem;">
+                                            <i class="fa-solid fa-pen"></i> تعديل
+                                        </button>
+                                        @if($table->status !== 'empty')
+                                            <button wire:click="resetTable({{ $table->id }})" class="btn btn-sm" title="إعادة تعيين" style="background: #FF9800; color: #fff; border: none; padding: 0.4rem 0.8rem;">
+                                                <i class="fa-solid fa-rotate-left"></i> تفريغ
+                                            </button>
+                                        @endif
+                                        <button wire:click="deleteTable({{ $table->id }})" class="btn btn-sm" title="حذف" style="background: #F44336; color: #fff; border: none; padding: 0.4rem 0.8rem;" onclick="return confirm('هل أنت متأكد من حذف هذه الطاولة؟')">
+                                            <i class="fa-solid fa-trash"></i> حذف
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            @endif
+                            <!-- Chairs Management Row -->
+                            <tr style="background-color: rgba(0,0,0,0.2);">
+                                <td></td>
+                                <td colspan="4" style="padding: 0.5rem;">
+                                    <div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center;">
+                                        <span style="font-size: 0.85rem; color: var(--text-secondary);"><i class="fa-solid fa-chair"></i> الكراسي:</span>
+                                        @foreach($table->chairs->sortBy('sort_order') as $chair)
+                                            <div style="background: rgba(255,255,255,0.05); border: 1px solid {{ $chair->status === 'empty' ? 'var(--border-color)' : 'var(--warning-color)' }}; border-radius: var(--radius-sm); padding: 4px 8px; display: flex; align-items: center; gap: 6px;">
+                                                <input type="text" wire:blur="renameChair({{ $chair->id }}, $event.target.value)" value="{{ $chair->number }}" class="form-control" style="width: 50px; height: 24px; padding: 2px 4px; font-size: 0.8rem; background: #000; color: #fff; text-align: center; border: none;">
+                                                @if($chair->status !== 'empty')
+                                                    <button wire:click="resetChair({{ $chair->id }})" class="btn btn-sm" title="تفريغ الكرسي" style="padding: 0 4px; color: var(--warning-color); background: none;"><i class="fa-solid fa-rotate-left"></i></button>
+                                                @endif
+                                                <button wire:click="removeChair({{ $chair->id }})" class="btn btn-sm" title="حذف الكرسي" style="padding: 0 4px; color: var(--danger-color); background: none;" onclick="return confirm('هل أنت متأكد؟')"><i class="fa-solid fa-times"></i></button>
+                                            </div>
+                                        @endforeach
+                                        <button wire:click="addChair({{ $table->id }})" class="btn btn-sm btn-outline" style="padding: 2px 8px; font-size: 0.8rem;"><i class="fa-solid fa-plus"></i> إضافة كرسي</button>
+                                    </div>
+                                </td>
+                            </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            @endif
+        @empty
+            <div style="text-align: center; color: var(--text-secondary); padding: 2rem;">لا توجد أقسام. يرجى إضافة قسم أولاً.</div>
+        @endforelse
+
+        {{-- Tables without a section --}}
+        @php
+            $unsectionedTables = $tables->filter(fn($t) => empty($t->section))->sortBy('sort_order');
+        @endphp
+        @if($unsectionedTables->isNotEmpty())
+        <div style="margin-bottom: 1.5rem;">
+            <div style="background: rgba(244, 67, 54, 0.08); border: 1px solid rgba(244, 67, 54, 0.25); border-radius: var(--radius-sm); padding: 0.6rem 1rem; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 8px;">
+                <i class="fa-solid fa-exclamation-triangle" style="color: var(--danger-color);"></i>
+                <span style="font-weight: 700; font-size: 1rem; color: var(--danger-color);">بدون قسم</span>
+                <span style="color: var(--text-secondary); font-size: 0.85rem; margin-right: auto;">({{ $unsectionedTables->count() }} طاولة)</span>
+            </div>
+            <div style="overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: var(--radius-sm); border: 1px solid rgba(255,255,255,0.05);">
+                <table class="data-table" style="min-width: 520px; background-color: #222;">
+                    <thead style="background-color: #2a2a2a;">
+                        <tr>
+                            <th style="width: 70px;">الترتيب</th>
+                            <th>الرقم</th>
+                            <th>المقاعد</th>
+                            <th>الحالة</th>
+                            <th style="width: 200px;">الإجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($unsectionedTables as $table)
+                        @php
+                            $statusLabel = match($table->status) {
+                                'empty' => 'فارغة',
+                                'customer_seated' => 'يوجد عميل',
+                                'order_prep' => 'قيد التحضير',
+                                'order_ready' => 'جاهز',
+                                'delivered' => 'تم التسليم',
+                            };
+                            $statusClass = match($table->status) {
+                                'empty' => 'badge-inactive',
+                                'customer_seated' => 'badge-pending',
+                                'order_prep' => 'badge-prep',
+                                'order_ready' => 'badge-ready',
+                                'delivered' => 'badge-delivered',
+                            };
+                        @endphp
+                        <tr wire:key="table-unsec-{{ $table->id }}">
+                            <td style="text-align: center; color: var(--text-secondary);">—</td>
+                            <td style="font-weight: 700; color: var(--primary-color);">{{ $table->number }}</td>
+                            <td>{{ $table->capacity }} <span style="color: var(--text-secondary);">مقاعد</span></td>
+                            <td><span class="badge {{ $statusClass }}" style="white-space: nowrap;">{{ $statusLabel }}</span></td>
+                            <td>
+                                <div style="display: flex; gap: 6px; white-space: nowrap;">
+                                    <button wire:click="editTable({{ $table->id }})" class="btn btn-sm" title="تعديل" style="background: #2196F3; color: #fff; border: none; padding: 0.4rem 0.8rem;">
+                                        <i class="fa-solid fa-pen"></i> تعديل
                                     </button>
-                                @endif
-                                <button wire:click="deleteTable({{ $table->id }})" class="btn btn-sm" title="حذف" style="background: #F44336; color: #fff; border: none; padding: 0.4rem 0.8rem;" onclick="return confirm('هل أنت متأكد من حذف هذه الطاولة؟')">
-                                    <i class="fa-solid fa-trash"></i> حذف
-                                </button>
-                            </div>
-                        </td>
-                    </tr>
-                    @endif
-                    @endforeach
-                </tbody>
-            </table>
+                                    <button wire:click="deleteTable({{ $table->id }})" class="btn btn-sm" title="حذف" style="background: #F44336; color: #fff; border: none; padding: 0.4rem 0.8rem;" onclick="return confirm('هل أنت متأكد من حذف هذه الطاولة؟')">
+                                        <i class="fa-solid fa-trash"></i> حذف
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        <!-- Chairs Management Row -->
+                        <tr style="background-color: rgba(0,0,0,0.2);">
+                            <td></td>
+                            <td colspan="4" style="padding: 0.5rem;">
+                                <div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center;">
+                                    <span style="font-size: 0.85rem; color: var(--text-secondary);"><i class="fa-solid fa-chair"></i> الكراسي:</span>
+                                    @foreach($table->chairs->sortBy('sort_order') as $chair)
+                                        <div style="background: rgba(255,255,255,0.05); border: 1px solid {{ $chair->status === 'empty' ? 'var(--border-color)' : 'var(--warning-color)' }}; border-radius: var(--radius-sm); padding: 4px 8px; display: flex; align-items: center; gap: 6px;">
+                                            <input type="text" wire:blur="renameChair({{ $chair->id }}, $event.target.value)" value="{{ $chair->number }}" class="form-control" style="width: 50px; height: 24px; padding: 2px 4px; font-size: 0.8rem; background: #000; color: #fff; text-align: center; border: none;">
+                                            @if($chair->status !== 'empty')
+                                                <button wire:click="resetChair({{ $chair->id }})" class="btn btn-sm" title="تفريغ الكرسي" style="padding: 0 4px; color: var(--warning-color); background: none;"><i class="fa-solid fa-rotate-left"></i></button>
+                                            @endif
+                                            <button wire:click="removeChair({{ $chair->id }})" class="btn btn-sm" title="حذف الكرسي" style="padding: 0 4px; color: var(--danger-color); background: none;" onclick="return confirm('هل أنت متأكد؟')"><i class="fa-solid fa-times"></i></button>
+                                        </div>
+                                    @endforeach
+                                    <button wire:click="addChair({{ $table->id }})" class="btn btn-sm btn-outline" style="padding: 2px 8px; font-size: 0.8rem;"><i class="fa-solid fa-plus"></i> إضافة كرسي</button>
+                                </div>
+                            </td>
+                        </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
         </div>
+        @endif
     </div>
 </div>

@@ -1,0 +1,30 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+
+class InventoryDailyReport extends Model
+{
+    use HasFactory;
+
+    protected $fillable = [
+        'user_id',
+        'total_stock_in',
+        'total_consumed',
+        'total_waste',
+        'opened_at',
+        'closed_at'
+    ];
+
+    protected $casts = [
+        'opened_at' => 'datetime',
+        'closed_at' => 'datetime',
+    ];
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+}

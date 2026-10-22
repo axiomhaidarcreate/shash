@@ -5,21 +5,46 @@ namespace App\Livewire;
 use Livewire\Component;
 use App\Models\Order;
 use App\Models\Table;
+use Carbon\Carbon;
 
 class KitchenBoard extends Component
 {
     public $lastOrderCount = 0;
     public $lastRushedCount = 0;
+    
+    public $filterDateFrom = '';
+    public $filterDateTo = '';
+    public $filterTimeFrom = '';
+    public $filterTimeTo = '';
+
+    public $showReportModal = false;
+    public $monthlyReportStartDate = '';
+    public $monthlyReportEndDate = '';
 
     public function mount()
     {
-        $this->lastOrderCount = Order::where('status', 'pending')->count();
+        $this->filterDateFrom = now()->format('Y-m-d');
+        $this->filterDateTo = now()->format('Y-m-d');
+        $this->filterTimeFrom = '00:00';
+        $this->filterTimeTo = '23:59';
+        $this->lastOrderCount = Order::where('status', 'pending')
+            ->where('target_kitchen', 'shisha')
+            ->where(function($q) {
+                $q->whereNull('manager_approval_status')->orWhere('manager_approval_status', 'approved');
+            })->count();
         $this->lastRushedCount = $this->getRushedOrdersCount();
+        
+        $this->monthlyReportStartDate = now()->startOfMonth()->format('Y-m-d');
+        $this->monthlyReportEndDate = now()->endOfMonth()->format('Y-m-d');
     }
 
     public function getRushedOrdersCount()
     {
         return Order::whereIn('status', ['pending', 'prep'])
+            ->where('target_kitchen', 'shisha')
+            ->where(function($query) {
+                $query->whereNull('manager_approval_status')->orWhere('manager_approval_status', 'approved');
+            })
             ->where(function($q) {
                 $q->where('is_rushed', true)
                   ->orWhere('created_at', '<=', now()->subMinutes(7));
@@ -38,6 +63,10 @@ class KitchenBoard extends Component
                 $table->status = 'order_prep';
                 $table->save();
             }
+
+            // Print receipt via Browser Popup
+            $printUrl = route('invoice.print', ['order' => $order->id, 'auto' => 1]);
+            $this->dispatch('print-invoice', url: $printUrl);
         }
     }
 
@@ -55,8 +84,19 @@ class KitchenBoard extends Component
                 $table->save();
             }
 
-            // Print the receipt (Customer & Cashier) automatically
-            $this->dispatch('print-receipt-silent', orderId: $order->id);
+            // إشعار العميل أن الطلب جاهز
+            if ($order->customer_id) {
+                \App\Models\CustomerNotification::create([
+                    'customer_id' => $order->customer_id,
+                    'title' => 'طلبك جاهز! 🎉',
+                    'message' => 'طلبك #' . $order->id . ' (' . $order->shisha_type . ') جاهز للتسليم.',
+                    'type' => 'order',
+                ]);
+            }
+
+            // Print receipt via Browser Popup
+            $printUrl = route('invoice.print', ['order' => $order->id, 'auto' => 1]);
+            $this->dispatch('print-invoice', url: $printUrl);
 
             $this->dispatch('order-ready-sound');
         }
@@ -66,11 +106,11 @@ class KitchenBoard extends Component
     {
         $order = Order::find($orderId);
         if ($order) {
-            // Find all orders in the same batch to print together
-            $batchOrders = Order::where('batch_id', $order->batch_id)->get();
-            $orderIds = $batchOrders->pluck('id')->implode(',');
-            $this->dispatch('print-kitchen-silent', orderIds: $orderIds);
-            session()->flash('success', 'تم إرسال أمر إعادة طباعة كرت المطبخ.');
+            // Print kitchen batch via Browser Popup
+            $batchOrderIds = Order::where('batch_id', $order->batch_id)->pluck('id')->toArray();
+            $printUrl = route('invoice.kitchenPrintBatch', ['ids' => implode(',', $batchOrderIds), 'auto' => 1]);
+            $this->dispatch('print-invoice', url: $printUrl);
+            session()->flash('success', 'تم فتح صفحة طباعة كرت المطبخ.');
         }
     }
 
@@ -78,47 +118,140 @@ class KitchenBoard extends Component
     {
         $order = Order::find($orderId);
         if ($order) {
-            $this->dispatch('print-receipt-silent', orderId: $order->id);
-            session()->flash('success', 'تم إرسال أمر إعادة طباعة الفاتورة.');
+            $printUrl = route('invoice.print', ['order' => $order->id, 'auto' => 1]);
+            $this->dispatch('print-invoice', url: $printUrl);
+            session()->flash('success', 'تم فتح صفحة طباعة الفاتورة.');
         }
     }
 
-    public function render()
+    public function cancelOrder($orderId)
     {
-        $pendingOrders = Order::with('table', 'user')->where('status', 'pending')->orderBy('created_at', 'asc')->get();
-        $prepOrders = Order::with('table', 'user')->where('status', 'prep')->orderBy('created_at', 'asc')->get();
+        $order = Order::find($orderId);
+        if ($order) {
+            $order->status = 'cancelled';
+            $order->save();
 
-        // Auto print pending orders that have not been printed for the kitchen yet
-        $unprintedKitchenOrders = Order::where('status', 'pending')->where('printed_kitchen', false)->get();
-        if ($unprintedKitchenOrders->isNotEmpty()) {
-            $grouped = $unprintedKitchenOrders->groupBy('batch_id');
-            foreach ($grouped as $batchId => $orders) {
-                $orderIds = $orders->pluck('id')->implode(',');
-                $this->dispatch('print-kitchen-silent', orderIds: $orderIds);
-                // Mark as printed immediately to avoid duplicate print dispatches
-                Order::whereIn('id', $orders->pluck('id'))->update(['printed_kitchen' => true]);
-            }
-            // Refresh relation to update the local variables
-            $pendingOrders = Order::with('table', 'user')->where('status', 'pending')->orderBy('created_at', 'asc')->get();
+            $order->releaseTableAndChairIfEmpty();
+
+            session()->flash('success', 'تم إلغاء الطلب بنجاح ولن يُحسب في التقارير أو المخزون.');
         }
+    }
 
-        // Detect new orders arriving
-        $currentPendingCount = $pendingOrders->count();
+    public function checkNewOrders()
+    {
+        $currentPendingCount = Order::where('status', 'pending')
+            ->where('target_kitchen', 'shisha')
+            ->where(function($q) {
+                $q->whereNull('manager_approval_status')->orWhere('manager_approval_status', 'approved');
+            })->count();
+
         if ($currentPendingCount > $this->lastOrderCount) {
             $this->dispatch('new-order-arrived');
         }
         $this->lastOrderCount = $currentPendingCount;
 
-        // Detect new rushed orders
         $currentRushedCount = $this->getRushedOrdersCount();
         if ($currentRushedCount > $this->lastRushedCount) {
             $this->dispatch('rush-order-alert');
         }
         $this->lastRushedCount = $currentRushedCount;
+    }
 
+    public function openReportModal()
+    {
+        $this->showReportModal = true;
+    }
+
+    public function closeReportModal()
+    {
+        $this->showReportModal = false;
+    }
+
+    public function render()
+    {
+        $pendingOrders = Order::with('table', 'user')->where('status', 'pending')
+            ->where('target_kitchen', 'shisha')
+            ->where(function($q) {
+                $q->whereNull('manager_approval_status')->orWhere('manager_approval_status', 'approved');
+            })
+            ->orderBy('created_at', 'asc')->get();
+
+        $prepOrders = Order::with('table', 'user')->where('status', 'prep')
+            ->where('target_kitchen', 'shisha')
+            ->where(function($q) {
+                $q->whereNull('manager_approval_status')->orWhere('manager_approval_status', 'approved');
+            })
+            ->orderBy('created_at', 'asc')->get();
+        $dailyStats = [];
+        $monthlyStats = [];
+
+        if ($this->showReportModal) {
+            $productCategories = \App\Models\Product::pluck('category', 'name')->toArray();
+            
+            $activeShift = \App\Models\WorkShift::where('status', 'open')->first();
+            
+            // Daily Stats
+            if ($activeShift) {
+                $dailyOrders = Order::whereBetween('created_at', [$activeShift->created_at, now()])->where('target_kitchen', 'shisha')->get();
+            } else {
+                $dailyOrders = collect();
+            }
+            foreach ($dailyOrders as $order) {
+                $category = $productCategories[$order->shisha_type] ?? 'أخرى';
+                
+                if (!isset($dailyStats[$category])) {
+                    $dailyStats[$category] = ['total_sold' => 0, 'total_cancelled' => 0, 'products' => []];
+                }
+                if (!isset($dailyStats[$category]['products'][$order->shisha_type])) {
+                    $dailyStats[$category]['products'][$order->shisha_type] = ['sold' => 0, 'cancelled' => 0];
+                }
+                
+                if ($order->status === 'cancelled') {
+                    $dailyStats[$category]['total_cancelled'] += $order->quantity;
+                    $dailyStats[$category]['products'][$order->shisha_type]['cancelled'] += $order->quantity;
+                } else {
+                    $dailyStats[$category]['total_sold'] += $order->quantity;
+                    $dailyStats[$category]['products'][$order->shisha_type]['sold'] += $order->quantity;
+                }
+            }
+
+            // Monthly/Range Stats
+            $mStart = $this->monthlyReportStartDate ? Carbon::parse($this->monthlyReportStartDate)->startOfDay() : now()->startOfMonth();
+            $mEnd = $this->monthlyReportEndDate ? Carbon::parse($this->monthlyReportEndDate)->endOfDay() : now()->endOfMonth();
+            
+            $monthlyOrders = Order::whereBetween('created_at', [$mStart, $mEnd])->where('target_kitchen', 'shisha')->get();
+            foreach ($monthlyOrders as $order) {
+                $category = $productCategories[$order->shisha_type] ?? 'أخرى';
+                $date = $order->created_at->format('Y-m-d');
+                
+                if (!isset($monthlyStats[$date])) {
+                    $monthlyStats[$date] = ['categories' => [], 'total_sold' => 0, 'total_cancelled' => 0];
+                }
+                
+                if (!isset($monthlyStats[$date]['categories'][$category])) {
+                    $monthlyStats[$date]['categories'][$category] = ['sold' => 0, 'cancelled' => 0];
+                }
+                
+                if ($order->status === 'cancelled') {
+                    $monthlyStats[$date]['categories'][$category]['cancelled'] += $order->quantity;
+                    $monthlyStats[$date]['total_cancelled'] += $order->quantity;
+                } else {
+                    $monthlyStats[$date]['categories'][$category]['sold'] += $order->quantity;
+                    $monthlyStats[$date]['total_sold'] += $order->quantity;
+                }
+            }
+            krsort($monthlyStats);
+        }
+            
         return view('livewire.kitchen-board', [
             'pendingOrders' => $pendingOrders,
             'prepOrders' => $prepOrders,
+            'filterDateFrom' => $this->filterDateFrom,
+            'filterDateTo' => $this->filterDateTo,
+            'filterTimeFrom' => $this->filterTimeFrom,
+            'filterTimeTo' => $this->filterTimeTo,
+            'dailyStats' => $dailyStats,
+            'monthlyStats' => $monthlyStats,
         ])->layout('components.layouts.app');
     }
 }

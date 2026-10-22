@@ -15,16 +15,17 @@
             background: #fff;
             color: #000;
             margin: 0;
-            padding: 5mm;
+            padding: 2mm 4mm;
             text-align: center;
             width: 80mm;
             box-sizing: border-box;
+            font-weight: 900;
         }
         .receipt {
-            width: 70mm;
+            width: 100%;
             margin: 0 auto;
             border: 1px dashed #ccc;
-            padding: 10px;
+            padding: 8px;
             box-sizing: border-box;
             word-wrap: break-word;
         }
@@ -39,30 +40,48 @@
         
         @media print {
             body { 
-                padding: 0; 
+                padding: 2mm 4mm; 
                 width: 80mm;
             }
             .receipt { 
                 border: none; 
-                padding: 5px; 
-                width: 74mm;
-                max-width: 74mm;
+                padding: 0; 
+                width: 100%;
             }
         }
     </style>
 </head>
 <body onload="window.print() {{ request('auto') ? '; setTimeout(window.close, 1000);' : '' }}">
-    @foreach(['نسخة العميل', 'نسخة موظف الجرد'] as $copyType)
     <div class="receipt">
-        <h2>{{ $loungeName }}</h2>
-        <div style="font-weight: bold; margin-bottom: 10px; border: 1px solid #000; display: inline-block; padding: 2px 8px;">{{ $copyType }}</div>
+        @php
+            $kitchen = \App\Models\Kitchen::where('slug', $order->target_kitchen)->first();
+            $kitchenName = $kitchen ? $kitchen->name : ($order->target_kitchen == 'barista' ? 'الباريستا' : ($order->target_kitchen == 'restaurant' ? 'المطعم' : 'الشيشة'));
+        @endphp
+        @if($order->status === 'prep')
+            <h2>فاتورة مطبخ {{ $kitchenName }}</h2>
+        @elseif($order->status === 'ready' || $order->status === 'pending')
+            <h2>فاتورة العميل لمطبخ {{ $kitchenName }}</h2>
+        @else
+            <h2>{{ $loungeName }}</h2>
+            <div style="font-weight: bold; margin-bottom: 10px; border: 1px solid #000; display: inline-block; padding: 2px 8px;">نسخة العميل</div>
+        @endif
         
         <div class="info">
-            @if($loungePhone) <div>هاتف: {{ $loungePhone }}</div> @endif
-            <div>التاريخ: {{ $order->created_at->format('Y-m-d h:i A') }}</div>
-            <div>رقم الفاتورة: #{{ $order->id }}</div>
-            <div>طاولة رقم: {{ $order->table->number }} @if($order->table && $order->table->section)({{ $order->table->section }})@endif</div>
-            <div>الموظف: {{ $order->user->name }}</div>
+            @if($order->status !== 'prep' && $order->status !== 'ready' && $loungePhone) <div>هاتف: {{ $loungePhone }}</div> @endif
+            <div>التاريخ والوقت: {{ $order->created_at->format('Y-m-d h:i A') }}</div>
+            <div>رقم الطلب: #{{ $order->id }}</div>
+            <div>الموظف: {{ $order->user?->name ?? 'طلب ذاتي' }}</div>
+            @if($order->guest_name)
+            <div style="font-size: 1.1rem; font-weight: bold; border: 2px solid #000; padding: 4px; margin-top: 5px;">طلب ضيافة باسم: {{ $order->guest_name }}</div>
+            @endif
+            @if($order->ticket)
+            <div style="font-size: 1.4rem; font-weight: 900; border: 2px dashed #000; padding: 4px; margin-top: 5px;">تذكرة: {{ $order->ticket->barcode }}</div>
+            @endif
+            @if($order->table)
+                <div style="font-size: 1.4rem; font-weight: 900; border: 2px solid #000; padding: 4px; margin-top: 5px;">{{ $order->table->number }} @if($order->table->section)({{ $order->table->section }})@endif</div>
+            @elseif($order->source === 'self_service')
+                <div style="font-size: 1.2rem; font-weight: 900; border: 2px solid #000; padding: 4px; margin-top: 5px;">طلب ذاتي 🎉</div>
+            @endif
         </div>
 
         <div class="details">
@@ -76,7 +95,7 @@
                 <tbody>
                     <tr>
                         <td>{{ $order->shisha_type }}</td>
-                        <td style="text-align: left;">{{ $order->quantity }}</td>
+                        <td style="text-align: left; font-size: 2.0rem; font-weight: 900;">{{ $order->quantity }}</td>
                     </tr>
                 </tbody>
             </table>
@@ -92,11 +111,5 @@
             شكراً لزيارتكم
         </div>
     </div>
-    
-    @if($loop->first)
-    <div style="page-break-after: always; margin-bottom: 30px; border-bottom: 1px dashed #ccc; padding-bottom: 15px;"></div>
-    @endif
-    
-    @endforeach
 </body>
 </html>

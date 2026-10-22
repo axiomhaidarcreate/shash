@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover">
-    <meta name="description" content="نظام إدارة صالة الشيشة - لوحة تحكم الموظفين">
+    <meta name="description" content="نظام مارس سوفت - لوحة تحكم الموظفين">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="شيشة">
+    <meta name="apple-mobile-web-app-title" content="مارس سوفت">
     <meta name="theme-color" content="#d4af37">
-    <title>{{ $title ?? 'نظام إدارة الشيشة' }}</title>
+    <title>{{ $title ?? 'مارس سوفت - نظام الإدارة' }}</title>
     <link rel="manifest" href="/manifest.json">
     <link rel="apple-touch-icon" href="/icons/icon-192.png">
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
@@ -41,6 +41,26 @@
             --safe-bottom: env(safe-area-inset-bottom, 0px);
             --safe-left: env(safe-area-inset-left, 0px);
             --safe-right: env(safe-area-inset-right, 0px);
+        }
+
+        /* Light Theme Override */
+        body.light-theme {
+            --bg-color: #f4f6f9;
+            --surface-color: #ffffff;
+            --surface-hover: #f8f9fa;
+            --text-primary: #333333;
+            --text-secondary: #6c757d;
+            --border-color: #dee2e6;
+            --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 20px rgba(0, 0, 0, 0.1);
+            --primary-glow: rgba(212, 175, 55, 0.1);
+        }
+        body.light-theme .form-control {
+            background-color: #ffffff;
+            color: #333333;
+        }
+        body.light-theme .form-control:focus {
+            background-color: #fff;
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -433,27 +453,47 @@
             main { padding: 0.5rem 1rem; }
         }
     </style>
+    <style>
+        /* Table Light Theme Tweaks */
+        body.light-theme .data-table th { background-color: #f1f3f5; color: #495057; }
+        body.light-theme .card[style*="background: linear-gradient(145deg, #1f1f1f, #252525)"] { background: #fff !important; border: 1px solid #dee2e6 !important; }
+        body.light-theme .data-table[style*="background-color: #222"] { background-color: #fff !important; }
+        body.light-theme .data-table thead[style*="background-color: #2a2a2a"] { background-color: #f8f9fa !important; }
+        body.light-theme input[style*="background: #000"],
+        body.light-theme select[style*="background: #000"] { background: #fff !important; color: #333 !important; }
+    </style>
 </head>
-<body>
+@php
+    $appTheme = \App\Models\Setting::where('key', 'app_theme')->value('value') ?? 'dark';
+@endphp
+<body class="{{ $appTheme === 'light' ? 'light-theme' : '' }}">
     @auth
     <nav class="navbar">
         <div class="navbar-brand">
-            <i class="fa-solid fa-wind"></i>
-            لاونج الشيشة
+            <img src="/images/mars-logo.png" alt="Mars Soft" style="width: 36px; height: 36px; border-radius: 50%; object-fit: cover; border: 1.5px solid var(--primary-color);">
+            مارس سوفت
         </div>
 
         <ul class="navbar-nav">
             @if(auth()->user()->hasRole('admin'))
                 <li><a href="{{ route('admin') }}" class="{{ request()->routeIs('admin') ? 'active' : '' }}"><i class="fa-solid fa-chart-line"></i> <span>لوحة التحكم</span></a></li>
                 <li><a href="{{ route('order') }}" class="{{ request()->routeIs('order') ? 'active' : '' }}"><i class="fa-solid fa-pen-to-square"></i> <span>الطلبات</span></a></li>
-                <li><a href="{{ route('kitchen') }}" class="{{ request()->routeIs('kitchen') ? 'active' : '' }}"><i class="fa-solid fa-fire"></i> <span>المطبخ</span></a></li>
+                <li><a href="{{ route('kitchen') }}" class="{{ request()->routeIs('kitchen') ? 'active' : '' }}"><i class="fa-solid fa-fire"></i> <span>مطبخ الشيشة</span></a></li>
+                <li><a href="{{ route('barista') }}" class="{{ request()->routeIs('barista') ? 'active' : '' }}"><i class="fa-solid fa-mug-hot"></i> <span>مطبخ الباريستا</span></a></li>
+                <li><a href="{{ route('restaurant') }}" class="{{ request()->routeIs('restaurant') ? 'active' : '' }}"><i class="fa-solid fa-utensils"></i> <span>مطبخ المطعم</span></a></li>
                 <li><a href="{{ route('delivery') }}" class="{{ request()->routeIs('delivery') ? 'active' : '' }}"><i class="fa-solid fa-truck-fast"></i> <span>الطلبات الجاهزة</span></a></li>
             @elseif(auth()->user()->hasRole('order_staff'))
                 <li><a href="{{ route('order') }}" class="active"><i class="fa-solid fa-pen-to-square"></i> الطلبات</a></li>
             @elseif(auth()->user()->hasRole('kitchen_staff'))
-                <li><a href="{{ route('kitchen') }}" class="active"><i class="fa-solid fa-fire"></i> المطبخ</a></li>
+                <li><a href="{{ route('kitchen') }}" class="active"><i class="fa-solid fa-fire"></i> مطبخ الشيشة</a></li>
+            @elseif(auth()->user()->hasRole('barista_staff'))
+                <li><a href="{{ route('barista') }}" class="active"><i class="fa-solid fa-mug-hot"></i> مطبخ الباريستا</a></li>
+            @elseif(auth()->user()->hasRole('restaurant_staff'))
+                <li><a href="{{ route('restaurant') }}" class="active"><i class="fa-solid fa-utensils"></i> مطبخ المطعم</a></li>
             @elseif(auth()->user()->hasRole('delivery_staff'))
                 <li><a href="{{ route('delivery') }}" class="active"><i class="fa-solid fa-truck-fast"></i> الطلبات الجاهزة</a></li>
+            @elseif(auth()->user()->hasRole('greeting_staff'))
+                <li><a href="{{ route('greetings') }}" class="active"><i class="fa-solid fa-gift"></i> التحايا</a></li>
             @endif
         </ul>
 
@@ -478,12 +518,9 @@
 
     <footer style="margin-top: auto; padding: 1.5rem; text-align: center; border-top: 1px solid var(--border-color); background: rgba(0,0,0,0.2);">
         <div style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.8;">
-            <div style="font-weight: 800; color: var(--primary-color); font-size: 0.95rem; margin-bottom: 4px;">تطوير المهندس: مازن أحمد حيدر</div>
-            <div style="margin: 8px 0;">
-                <a href="https://wa.me/967716053268" target="_blank" style="color: inherit; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; transition: color 0.2s; padding: 4px 10px; background: rgba(255,255,255,0.05); border-radius: 20px;" onmouseover="this.style.color='#25D366'" onmouseout="this.style.color='inherit'">
-                    <i class="fa-brands fa-whatsapp" style="font-size: 1rem;"></i> <span dir="ltr" style="font-family: monospace; font-size: 0.9rem;">+967 716 053 268</span>
-                </a>
-            </div>
+            <img src="/images/mars-logo.png" alt="Mars Soft" style="width: 40px; height: 40px; border-radius: 50%; margin: 0 auto 8px; display: block; object-fit: cover; opacity: 0.85;">
+            <div style="font-weight: 800; color: var(--primary-color); font-size: 0.95rem; margin-bottom: 4px;">برمجة شركة مارس سوفت</div>
+            <div style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 8px;">Mars Soft Company</div>
             <div style="margin-top: 12px; font-size: 0.8rem; display: flex; justify-content: center; gap: 15px;">
                 <a href="#" style="color: inherit; text-decoration: none; border-bottom: 1px dashed var(--text-secondary); padding-bottom: 2px; transition: all 0.2s;" onmouseover="this.style.color='var(--text-primary)'; this.style.borderColor='var(--text-primary)'" onmouseout="this.style.color='inherit'; this.style.borderColor='var(--text-secondary)'">الدعم الفني</a>
                 <span style="opacity: 0.3;">|</span>
@@ -497,7 +534,35 @@
     <script>
         const AudioCtx = window.AudioContext || window.webkitAudioContext;
         let audioCtx = null;
-        function getAudioCtx() { if (!audioCtx) audioCtx = new AudioCtx(); return audioCtx; }
+        function getAudioCtx() {
+            if (!audioCtx) audioCtx = new AudioCtx();
+            // Resume if suspended (browser autoplay policy)
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            return audioCtx;
+        }
+
+        // === Browser Notifications ===
+        function initNotifications() {
+            if ('Notification' in window && Notification.permission === 'default') {
+                Notification.requestPermission();
+            }
+        }
+
+        function sendNotification(title, body, icon) {
+            if ('Notification' in window && Notification.permission === 'granted') {
+                try {
+                    const n = new Notification(title, {
+                        body: body,
+                        icon: icon || '/icons/icon-192.png',
+                        badge: '/icons/icon-192.png',
+                        vibrate: [200, 100, 200],
+                        tag: 'shisha-' + Date.now(),
+                        requireInteraction: false,
+                    });
+                    setTimeout(() => n.close(), 6000);
+                } catch(e) { console.warn('Notification error', e); }
+            }
+        }
 
         function playSound(type) {
             try {
@@ -507,16 +572,29 @@
                     playTone(ctx, 880, 0.12, 0.18, 'sine', 0.5);
                     playTone(ctx, 1100, 0.2, 0.4, 'sine', 0.4);
                     showToast('🔔 طلب جديد وصل!', 'toast-new-order');
+                    sendNotification('🔔 طلب جديد!', 'وصل طلب جديد للمطبخ - يرجى التحقق فوراً');
                 } else if (type === 'success') {
                     playTone(ctx, 523, 0.15, 0, 'sine', 0.4);
                     playTone(ctx, 659, 0.15, 0.12, 'sine', 0.4);
                     playTone(ctx, 784, 0.25, 0.24, 'sine', 0.35);
                     showToast('✅ تم بنجاح!', 'toast-delivered');
+                    sendNotification('✅ تمت العملية بنجاح', 'تم إرسال/تحديث الطلب بنجاح');
                 } else if (type === 'ready') {
                     playTone(ctx, 660, 0.12, 0, 'triangle', 0.4);
                     playTone(ctx, 880, 0.12, 0.15, 'triangle', 0.4);
                     playTone(ctx, 1046, 0.2, 0.3, 'triangle', 0.35);
                     showToast('🟢 طلب جاهز للتوصيل!', 'toast-ready');
+                    sendNotification('🟢 طلب جاهز!', 'طلب جاهز للتوصيل - يرجى التسليم');
+                } else if (type === 'urgent') {
+                    playTone(ctx, 900, 0.25, 0, 'sawtooth', 0.5);
+                    playTone(ctx, 700, 0.25, 0.3, 'sawtooth', 0.5);
+                    playTone(ctx, 900, 0.25, 0.6, 'sawtooth', 0.5);
+                    playTone(ctx, 700, 0.25, 0.9, 'sawtooth', 0.5);
+                    showToast('🚨 تنبيه استعجال!', 'toast-new-order');
+                    sendNotification('🚨 استعجال طارئ!', 'تم استعجال طلب - يرجى الإسراع في التحضير!');
+                } else if (type === 'error') {
+                    playTone(ctx, 300, 0.3, 0, 'sawtooth', 0.5);
+                    playTone(ctx, 250, 0.4, 0.35, 'sawtooth', 0.5);
                 }
             } catch(e) { console.warn('Sound error', e); }
         }
@@ -536,8 +614,15 @@
             c.appendChild(t); setTimeout(() => { if (t.parentNode) t.remove(); }, 3800);
         }
 
-        document.addEventListener('click', function init() { getAudioCtx(); document.removeEventListener('click', init); }, { once: true });
-        document.addEventListener('touchstart', function init() { getAudioCtx(); document.removeEventListener('touchstart', init); }, { once: true });
+        // Init audio + notifications on first user interaction
+        function initAudioAndNotifications() {
+            getAudioCtx();
+            initNotifications();
+        }
+        document.addEventListener('click', initAudioAndNotifications, { once: true });
+        document.addEventListener('touchstart', initAudioAndNotifications, { once: true });
+        // Also try to init notifications immediately (doesn't need interaction)
+        initNotifications();
 
         // Silent Print Listeners
         document.addEventListener('livewire:init', () => {

@@ -3,16 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover">
-    <meta name="description" content="نظام إدارة صالة الشيشة - لوحة تحكم المدير">
+    <meta name="description" content="نظام مارس سوفت - لوحة تحكم المدير">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="شيشة مدير">
+    <meta name="apple-mobile-web-app-title" content="مارس سوفت">
     <meta name="theme-color" content="#d4af37">
-    <title>{{ $title ?? 'لوحة تحكم المدير' }}</title>
+    <title>{{ $title ?? 'مارس سوفت - لوحة تحكم المدير' }}</title>
     <link rel="manifest" href="/manifest.json">
     <link rel="apple-touch-icon" href="/icons/icon-192.png">
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            corePlugins: {
+                preflight: false,
+            }
+        }
+    </script>
     @livewireStyles
     <style>
         :root {
@@ -40,6 +48,29 @@
             --safe-top: env(safe-area-inset-top, 0px);
             --safe-bottom: env(safe-area-inset-bottom, 0px);
         }
+
+        /* Light Theme Override */
+        body.light-theme {
+            --bg-color: #f4f6f9;
+            --surface-color: #ffffff;
+            --surface-hover: #f8f9fa;
+            --sidebar-color: #ffffff;
+            --text-primary: #333333;
+            --text-secondary: #6c757d;
+            --border-color: #dee2e6;
+            --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 20px rgba(0, 0, 0, 0.1);
+            --primary-glow: rgba(212, 175, 55, 0.1);
+        }
+        body.light-theme .form-control {
+            background-color: #ffffff;
+            color: #333333;
+        }
+        body.light-theme .form-control:focus {
+            background-color: #fff;
+        }
+        body.light-theme .sidebar-link:hover { background: rgba(0,0,0,0.04); }
+        body.light-theme .sidebar-user { background: rgba(0,0,0,0.03); }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
         html, body {
@@ -253,9 +284,51 @@
             * { text-shadow: none !important; }
             @page { margin: 1cm; }
         }
+
+        /* ===== Sidebar Dropdown / Submenu ===== */
+        .sidebar-dropdown-toggle {
+            width: 100%;
+            background: none;
+            border: none;
+            font-family: var(--font-family);
+            cursor: pointer;
+            text-align: right;
+        }
+        .sidebar-submenu {
+            overflow: hidden;
+            max-height: 0;
+            transition: max-height 0.3s ease, opacity 0.3s ease;
+            opacity: 0;
+        }
+        .sidebar-dropdown.open .sidebar-submenu {
+            max-height: 600px;
+            opacity: 1;
+        }
+        .sidebar-dropdown.open .sidebar-dropdown-arrow {
+            transform: rotate(180deg);
+        }
+        .sidebar-sublink {
+            padding-right: 2.2rem !important;
+            font-size: 0.88rem !important;
+            color: var(--text-secondary);
+        }
+        .sidebar-sublink:hover { color: var(--text-primary) !important; }
+        .sidebar-sublink.active { color: var(--primary-color) !important; }
+    </style>
+    <style>
+        /* Table Light Theme Tweaks */
+        body.light-theme .data-table th { background-color: #f1f3f5; color: #495057; }
+        body.light-theme .card[style*="background: linear-gradient(145deg, #1f1f1f, #252525)"] { background: #fff !important; border: 1px solid #dee2e6 !important; }
+        body.light-theme .data-table[style*="background-color: #222"] { background-color: #fff !important; }
+        body.light-theme .data-table thead[style*="background-color: #2a2a2a"] { background-color: #f8f9fa !important; }
+        body.light-theme input[style*="background: #000"],
+        body.light-theme select[style*="background: #000"] { background: #fff !important; color: #333 !important; }
     </style>
 </head>
-<body>
+@php
+    $appTheme = \App\Models\Setting::where('key', 'app_theme')->value('value') ?? 'dark';
+@endphp
+<body class="{{ $appTheme === 'light' ? 'light-theme' : '' }}">
     <!-- Mobile Toggle -->
     <button class="sidebar-toggle" id="sidebarToggle" onclick="toggleSidebar()">
         <i class="fa-solid fa-bars"></i>
@@ -267,7 +340,8 @@
     <!-- Sidebar -->
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-brand">
-            <h2><i class="fa-solid fa-wind"></i> لاونج الشيشة</h2>
+            <img src="/images/mars-logo.png" alt="Mars Soft" style="width: 70px; height: 70px; border-radius: 50%; margin: 0 auto 8px; display: block; object-fit: cover; border: 2px solid var(--primary-color); box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3);">
+            <h2 style="font-size: 1.1rem;">مارس سوفت</h2>
             <p>لوحة تحكم المدير</p>
         </div>
 
@@ -287,33 +361,152 @@
                 <a href="{{ route('order') }}" class="sidebar-link {{ request()->routeIs('order') ? 'active' : '' }}" onclick="closeSidebarOnMobile()">
                     <i class="fa-solid fa-pen-to-square"></i> إنشاء طلب
                 </a>
-                <a href="{{ route('kitchen') }}" class="sidebar-link {{ request()->routeIs('kitchen') ? 'active' : '' }}" onclick="closeSidebarOnMobile()">
-                    <i class="fa-solid fa-fire"></i> المطبخ
-                </a>
+                {{-- ===== مجموعة المطبخ (dropdown) ===== --}}
+                @php
+                    $kitchenActive = request()->routeIs('kitchen') || request()->routeIs('barista') || request()->routeIs('restaurant');
+                @endphp
+                <div class="sidebar-dropdown {{ $kitchenActive ? 'open' : '' }}" id="kitchenDropdown">
+                    <button class="sidebar-link sidebar-dropdown-toggle {{ $kitchenActive ? 'active' : '' }}"
+                            onclick="toggleDropdown('kitchenDropdown')" type="button">
+                        <i class="fa-solid fa-fire"></i>
+                        <span style="flex:1;">المطبخ</span>
+                        <i class="fa-solid fa-chevron-down sidebar-dropdown-arrow" style="font-size:0.75rem; transition: transform 0.25s ease;"></i>
+                    </button>
+                    <div class="sidebar-submenu">
+                        <a href="{{ route('kitchen') }}" class="sidebar-link sidebar-sublink {{ request()->routeIs('kitchen') ? 'active' : '' }}" onclick="closeSidebarOnMobile()">
+                            <i class="fa-solid fa-wind" style="color: var(--primary-color);"></i> مطبخ الشيشة
+                        </a>
+                        <a href="{{ route('barista') }}" class="sidebar-link sidebar-sublink {{ request()->routeIs('barista') ? 'active' : '' }}" onclick="closeSidebarOnMobile()">
+                            <i class="fa-solid fa-mug-hot" style="color: #2196F3;"></i> مطبخ الباريستا
+                        </a>
+                        <a href="{{ route('restaurant') }}" class="sidebar-link sidebar-sublink {{ request()->routeIs('restaurant') ? 'active' : '' }}" onclick="closeSidebarOnMobile()">
+                            <i class="fa-solid fa-bowl-food" style="color: #4CAF50;"></i> مطبخ المطعم
+                        </a>
+                    </div>
+                </div>
                 <a href="{{ route('delivery') }}" class="sidebar-link {{ request()->routeIs('delivery') ? 'active' : '' }}" onclick="closeSidebarOnMobile()">
                     <i class="fa-solid fa-truck-fast"></i> الطلبات الجاهزة
+                </a>
+                <a href="{{ route('admin.reception') }}" class="sidebar-link {{ request()->routeIs('admin.reception') ? 'active' : '' }}" onclick="closeSidebarOnMobile()">
+                    <i class="fa-solid fa-ticket"></i> الاستقبال
+                </a>
+                <a href="{{ route('admin.greetings') }}" class="sidebar-link {{ request()->routeIs('admin.greetings') || request()->routeIs('admin.greetings.reports') ? 'active' : '' }}" onclick="closeSidebarOnMobile()">
+                    <i class="fa-solid fa-gift"></i> التحايا
+                </a>
+            </div>
+            @endrole
+
+
+            @role('admin')
+            <div class="sidebar-section">
+                <div class="sidebar-section-title">إدارة العملاء والولاء</div>
+                <a href="{{ route('admin.customers') }}" class="sidebar-link {{ request()->routeIs('admin.customers') ? 'active' : '' }}" onclick="closeSidebarOnMobile()">
+                    <i class="fa-solid fa-users" style="color:var(--primary-color);"></i> العملاء والرسائل
+                </a>
+                <a href="{{ route('admin.subscription_packages') }}" class="sidebar-link {{ request()->routeIs('admin.subscription_packages') ? 'active' : '' }}" onclick="closeSidebarOnMobile()">
+                    <i class="fa-solid fa-crown"></i> باقات الاشتراك
+                </a>
+                <a href="{{ route('admin.loyalty.offers') }}" class="sidebar-link {{ request()->routeIs('admin.loyalty.offers') ? 'active' : '' }}" onclick="closeSidebarOnMobile()">
+                    <i class="fa-solid fa-star"></i> عروض الولاء
+                </a>
+                <a href="{{ route('admin.loyalty.customers') }}" class="sidebar-link {{ request()->routeIs('admin.loyalty.customers') ? 'active' : '' }}" onclick="closeSidebarOnMobile()">
+                    <i class="fa-solid fa-users-viewfinder"></i> عملاء الولاء
+                </a>
+                <a href="{{ route('admin.subscribed_customers') }}" class="sidebar-link {{ request()->routeIs('admin.subscribed_customers') ? 'active' : '' }}" onclick="closeSidebarOnMobile()">
+                    <i class="fa-solid fa-user-check"></i> المشتركين
                 </a>
             </div>
             @endrole
 
             <div class="sidebar-section">
                 <div class="sidebar-section-title">الإدارة</div>
-                @role('admin')
-                <a href="{{ route('admin.products') }}" class="sidebar-link {{ request()->routeIs('admin.products') ? 'active' : '' }}" onclick="closeSidebarOnMobile()">
-                    <i class="fa-solid fa-box-open"></i> المنتجات
-                </a>
-                <a href="{{ route('admin.employees') }}" class="sidebar-link {{ request()->routeIs('admin.employees') ? 'active' : '' }}" onclick="closeSidebarOnMobile()">
-                    <i class="fa-solid fa-users-gear"></i> الموظفين
-                </a>
-                @endrole
-                @hasanyrole('admin|inventory_staff')
-                <a href="{{ route('admin.inventory') }}" class="sidebar-link {{ request()->routeIs('admin.inventory') ? 'active' : '' }}" onclick="closeSidebarOnMobile()">
-                    <i class="fa-solid fa-boxes-stacked"></i> المخزون
-                </a>
+                @hasanyrole('admin|inventory_staff|daily_purchases_staff')
+                @php
+                    $purchasesActive = request()->routeIs('admin.purchases*') || request()->routeIs('admin.expenses') || request()->routeIs('admin.inventory') || request()->routeIs('admin.physical_inventory') || request()->routeIs('admin.daily_purchases_requests') || request()->routeIs('admin.products') || request()->routeIs('admin.reports');
+                @endphp
+                <div class="sidebar-dropdown {{ $purchasesActive ? 'open' : '' }}" id="purchasesDropdown">
+                    <button class="sidebar-link sidebar-dropdown-toggle {{ $purchasesActive ? 'active' : '' }}"
+                            onclick="toggleDropdown('purchasesDropdown')" type="button">
+                        <i class="fa-solid fa-cart-shopping"></i>
+                        <span style="flex:1;">المشتريات والمخزون</span>
+                        <i class="fa-solid fa-chevron-down sidebar-dropdown-arrow" style="font-size:0.75rem; transition: transform 0.25s ease;"></i>
+                    </button>
+                    <div class="sidebar-submenu">
+                        @role('admin')
+                        <a href="{{ route('admin.purchases') }}" class="sidebar-link sidebar-sublink {{ request()->routeIs('admin.purchases') ? 'active' : '' }}" onclick="closeSidebarOnMobile()">
+                            <i class="fa-solid fa-house" style="color: var(--primary-color);"></i> الرئيسية
+                        </a>
+                        <a href="{{ route('admin.purchases.invoices') }}" class="sidebar-link sidebar-sublink {{ request()->routeIs('admin.purchases.invoices') ? 'active' : '' }}" onclick="closeSidebarOnMobile()">
+                            <i class="fa-solid fa-file-invoice-dollar" style="color: #4CAF50;"></i> فواتير المشتريات
+                        </a>
+                        <a href="{{ route('admin.expenses') }}" class="sidebar-link sidebar-sublink {{ request()->routeIs('admin.expenses') ? 'active' : '' }}" onclick="closeSidebarOnMobile()">
+                            <i class="fa-solid fa-file-invoice-dollar" style="color: #F44336;"></i> المصروفات
+                        </a>
+                        <a href="{{ route('admin.purchases.suppliers') }}" class="sidebar-link sidebar-sublink {{ request()->routeIs('admin.purchases.suppliers') ? 'active' : '' }}" onclick="closeSidebarOnMobile()">
+                            <i class="fa-solid fa-users" style="color: #2196F3;"></i> الموردين
+                        </a>
+                        <a href="{{ route('admin.products') }}" class="sidebar-link sidebar-sublink {{ request()->routeIs('admin.products') ? 'active' : '' }}" onclick="closeSidebarOnMobile()">
+                            <i class="fa-solid fa-box-open" style="color: #9C27B0;"></i> المخزون والمنتجات
+                        </a>
+                        <a href="{{ route('admin.reports') }}" class="sidebar-link sidebar-sublink {{ request()->routeIs('admin.reports') ? 'active' : '' }}" onclick="closeSidebarOnMobile()">
+                            <i class="fa-solid fa-chart-pie" style="color: #FF5722;"></i> التقارير
+                        </a>
+                        @endrole
+
+                        @hasanyrole('admin|inventory_staff')
+                        <a href="{{ route('admin.inventory') }}" class="sidebar-link sidebar-sublink {{ request()->routeIs('admin.inventory') ? 'active' : '' }}" onclick="closeSidebarOnMobile()">
+                            <i class="fa-solid fa-boxes-stacked" style="color: #FF9800;"></i> حركة المخزون
+                        </a>
+                        <a href="{{ route('admin.physical_inventory') }}" class="sidebar-link sidebar-sublink {{ request()->routeIs('admin.physical_inventory') ? 'active' : '' }}" onclick="closeSidebarOnMobile()">
+                            <i class="fa-solid fa-clipboard-check" style="color: #00BCD4;"></i> الجرد الفعلي
+                        </a>
+                        @endhasanyrole
+
+                        @hasanyrole('admin|daily_purchases_staff')
+                        <a href="{{ route('admin.daily_purchases_requests') }}" class="sidebar-link sidebar-sublink {{ request()->routeIs('admin.daily_purchases_requests') ? 'active' : '' }}" onclick="closeSidebarOnMobile()">
+                            <i class="fa-solid fa-cart-arrow-down" style="color: #E91E63;"></i> طلبات المشتريات اليومية
+                        </a>
+                        @endhasanyrole
+                    </div>
+                </div>
                 @endhasanyrole
+
+                @php $pendingReminders = \App\Models\Reminder::where('is_done', false)->count(); @endphp
+                <a href="{{ route('admin.reminders') }}" class="sidebar-link {{ request()->routeIs('admin.reminders') ? 'active' : '' }}" onclick="closeSidebarOnMobile()">
+                    <i class="fa-solid fa-bell"></i> التذكيرات
+                    @if($pendingReminders > 0)
+                        <span style="background: var(--danger-color); color: white; border-radius: 50%; width: 18px; height: 18px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.65rem; font-weight: 800; margin-right: auto;">{{ $pendingReminders }}</span>
+                    @endif
+                </a>
+
                 @role('admin')
+                @php
+                    $hrActive = request()->is('hr*');
+                @endphp
+                <a href="{{ url('/hr/portal') }}" class="sidebar-link {{ request()->is('hr*') ? 'active' : '' }}" onclick="closeSidebarOnMobile()">
+                    <i class="fa-solid fa-users-viewfinder"></i> الموارد البشرية
+                </a>
+
+                <a href="{{ route('admin.employees') }}" class="sidebar-link {{ request()->routeIs('admin.employees') ? 'active' : '' }}" onclick="closeSidebarOnMobile()">
+                    <i class="fa-solid fa-users-gear"></i> الموظفين (قديم)
+                </a>
+                <a href="{{ route('admin.kitchens') }}" class="sidebar-link {{ request()->routeIs('admin.kitchens') ? 'active' : '' }}" onclick="closeSidebarOnMobile()">
+                    <i class="fa-solid fa-kitchen-set"></i> إدارة المطابخ
+                </a>
+                <a href="{{ route('admin.artists') }}" class="sidebar-link {{ request()->routeIs('admin.artists') ? 'active' : '' }}" onclick="closeSidebarOnMobile()">
+                    <i class="fa-solid fa-microphone-lines" style="color: #E91E63;"></i> إدارة الحفلات والحجوزات
+                </a>
+                <a href="{{ route('admin.bookings') }}" class="sidebar-link {{ request()->routeIs('admin.bookings') ? 'active' : '' }}" onclick="closeSidebarOnMobile()">
+                    <i class="fa-solid fa-calendar-check" style="color: #4CAF50;"></i> حجوزات العملاء
+                </a>
                 <a href="{{ route('admin.settings') }}" class="sidebar-link {{ request()->routeIs('admin.settings') ? 'active' : '' }}" onclick="closeSidebarOnMobile()">
                     <i class="fa-solid fa-gear"></i> الإعدادات
+                </a>
+                <a href="{{ route('admin.site') }}" class="sidebar-link {{ request()->routeIs('admin.site') ? 'active' : '' }}" onclick="closeSidebarOnMobile()">
+                    <i class="fa-solid fa-globe"></i> إدارة الموقع العام
+                </a>
+                <a href="{{ route('admin.shifts') }}" class="sidebar-link {{ request()->routeIs('admin.shifts') ? 'active' : '' }}" onclick="closeSidebarOnMobile()">
+                    <i class="fa-solid fa-clock"></i> الفترات المحاسبية والأوقات
                 </a>
                 @endrole
             </div>
@@ -321,12 +514,9 @@
 
         <div class="sidebar-footer">
             <div style="text-align: center; margin-bottom: 15px; font-size: 0.75rem; color: var(--text-secondary); line-height: 1.6;">
-                <div style="font-weight: 800; color: var(--primary-color); margin-bottom: 4px;">تطوير المهندس: مازن أحمد حيدر</div>
-                <div>
-                    <a href="https://wa.me/967716053268" target="_blank" style="color: inherit; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; transition: color 0.2s;" onmouseover="this.style.color='#25D366'" onmouseout="this.style.color='inherit'">
-                        <i class="fa-brands fa-whatsapp" style="font-size: 0.9rem;"></i> <span dir="ltr" style="font-family: monospace; font-size: 0.8rem;">+967 716 053 268</span>
-                    </a>
-                </div>
+                <img src="/images/mars-logo.png" alt="Mars Soft" style="width: 36px; height: 36px; border-radius: 50%; margin: 0 auto 6px; display: block; object-fit: cover; opacity: 0.8;">
+                <div style="font-weight: 800; color: var(--primary-color); margin-bottom: 4px;">برمجة شركة مارس سوفت</div>
+                <div style="font-size: 0.7rem; color: var(--text-secondary);">Mars Soft Company</div>
                 <div style="margin-top: 8px; font-size: 0.7rem; display: flex; justify-content: center; gap: 10px;">
                     <a href="#" style="color: inherit; text-decoration: none; border-bottom: 1px dashed var(--text-secondary); padding-bottom: 1px; transition: all 0.2s;" onmouseover="this.style.color='var(--text-primary)'; this.style.borderColor='var(--text-primary)'" onmouseout="this.style.color='inherit'; this.style.borderColor='var(--text-secondary)'">الدعم الفني</a>
                     <span style="opacity: 0.5;">|</span>
@@ -340,7 +530,17 @@
                 </div>
                 <div class="sidebar-user-info">
                     <div class="name">{{ auth()->user()->name }}</div>
-                    <div class="role">{{ auth()->user()->hasRole('admin') ? 'مدير النظام' : 'موظف الجرد' }}</div>
+                    <div class="role">
+                        @if(auth()->user()->hasRole('admin'))
+                            مدير النظام
+                        @elseif(auth()->user()->hasRole('inventory_staff'))
+                            موظف الجرد
+                        @elseif(auth()->user()->hasRole('daily_purchases_staff'))
+                            موظف مشتريات
+                        @else
+                            موظف
+                        @endif
+                    </div>
                 </div>
             </div>
             <form action="{{ route('logout') }}" method="POST">
@@ -355,12 +555,22 @@
     <div class="toast-container" id="toastContainer"></div>
 
     <div class="main-content">
+        @if(request()->routeIs('admin'))
+            @livewire('admin.reminder-notification')
+        @endif
         {{ $slot }}
     </div>
 
     @livewireScripts
 
     <script>
+        function toggleDropdown(id) {
+            const el = document.getElementById(id);
+            if(el) {
+                el.classList.toggle('open');
+            }
+        }
+
         function toggleSidebar() {
             const sidebar = document.getElementById('sidebar');
             const overlay = document.getElementById('sidebarOverlay');
@@ -422,7 +632,34 @@
         // Sound system
         const AudioCtx = window.AudioContext || window.webkitAudioContext;
         let audioCtx = null;
-        function getAudioCtx() { if (!audioCtx) audioCtx = new AudioCtx(); return audioCtx; }
+        function getAudioCtx() {
+            if (!audioCtx) audioCtx = new AudioCtx();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            return audioCtx;
+        }
+
+        // === Browser Notifications ===
+        function initNotifications() {
+            if ('Notification' in window && Notification.permission === 'default') {
+                Notification.requestPermission();
+            }
+        }
+
+        function sendNotification(title, body, icon) {
+            if ('Notification' in window && Notification.permission === 'granted') {
+                try {
+                    const n = new Notification(title, {
+                        body: body,
+                        icon: icon || '/icons/icon-192.png',
+                        badge: '/icons/icon-192.png',
+                        vibrate: [200, 100, 200],
+                        tag: 'shisha-' + Date.now(),
+                        requireInteraction: false,
+                    });
+                    setTimeout(() => n.close(), 6000);
+                } catch(e) { console.warn('Notification error', e); }
+            }
+        }
 
         function playSound(type) {
             try {
@@ -431,10 +668,21 @@
                     playTone(ctx, 880, 0.12, 0, 'sine', 0.5);
                     playTone(ctx, 880, 0.12, 0.18, 'sine', 0.5);
                     playTone(ctx, 1100, 0.2, 0.4, 'sine', 0.4);
+                    showToast('🔔 طلب جديد وصل!', 'new-order');
+                    sendNotification('🔔 طلب جديد!', 'وصل طلب جديد - يرجى التحقق فوراً');
                 } else if (type === 'success') {
                     playTone(ctx, 523, 0.15, 0, 'sine', 0.4);
                     playTone(ctx, 659, 0.15, 0.12, 'sine', 0.4);
                     playTone(ctx, 784, 0.25, 0.24, 'sine', 0.35);
+                    showToast('✅ تم بنجاح!', 'success');
+                    sendNotification('✅ تمت العملية بنجاح', 'تم إرسال/تحديث الطلب بنجاح');
+                } else if (type === 'urgent') {
+                    playTone(ctx, 900, 0.25, 0, 'sawtooth', 0.5);
+                    playTone(ctx, 700, 0.25, 0.3, 'sawtooth', 0.5);
+                    playTone(ctx, 900, 0.25, 0.6, 'sawtooth', 0.5);
+                    playTone(ctx, 700, 0.25, 0.9, 'sawtooth', 0.5);
+                    showToast('🚨 تنبيه استعجال!', 'success');
+                    sendNotification('🚨 استعجال طارئ!', 'تم استعجال طلب - يرجى الإسراع!');
                 }
             } catch(e) { console.warn('Sound error', e); }
         }
@@ -454,8 +702,21 @@
             c.appendChild(t); setTimeout(() => { if (t.parentNode) t.parentNode.removeChild(t); }, 3800);
         }
 
-        document.addEventListener('click', function init() { getAudioCtx(); document.removeEventListener('click', init); }, { once: true });
+        function initAudioAndNotifications() {
+            getAudioCtx();
+            initNotifications();
+        }
+        document.addEventListener('click', initAudioAndNotifications, { once: true });
+        document.addEventListener('touchstart', initAudioAndNotifications, { once: true });
+        initNotifications();
     </script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js').catch(() => {});
+        }
+    </script>
+</body>
+</html>
     <script>
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('/sw.js').catch(() => {});

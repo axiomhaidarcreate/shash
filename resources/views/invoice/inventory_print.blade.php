@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>تقرير جرد الطاولات - {{ $targetDate->format('Y-m-d') }}</title>
+    <title>تقرير جرد الطاولات - {{ $targetDate->format('Y-m-d') }}{{ $shiftLabel ? ' - '.$shiftLabel : '' }}</title>
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;800&display=swap" rel="stylesheet">
     <style>
         * { box-sizing: border-box; }
@@ -13,8 +13,9 @@
             color: #000;
             margin: 0;
             padding: 20px 30px;
-            font-size: 12px;
+            font-size: 14px;
             direction: rtl;
+            font-weight: bold !important;
         }
 
         /* ───── Header ───── */
@@ -37,7 +38,7 @@
             display: flex;
             justify-content: space-between;
             margin-bottom: 12px;
-            font-size: 11px;
+            font-size: 13px;
             border-bottom: 1px solid #ccc;
             padding-bottom: 6px;
         }
@@ -73,7 +74,8 @@
         table.main-table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 11px;
+            font-size: 13px;
+            font-weight: bold;
         }
         table.main-table thead tr {
             background: #222;
@@ -112,8 +114,9 @@
         table.summary-table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 11px;
+            font-size: 13px;
             margin-top: 12px;
+            font-weight: bold;
         }
         table.summary-table th {
             background: #333;
@@ -176,14 +179,26 @@
 
     <!-- Report Header -->
     <div class="report-header">
-        <h1>{{ $loungeName }}</h1>
-        <div class="sub">تقرير جرد الطاولات اليومي</div>
+        @if(isset($customTitle) && $customTitle)
+            <h1>{{ $customTitle }}</h1>
+        @else
+            <h1>{{ $loungeName }}</h1>
+        @endif
+        @if($shiftLabel)
+            <div class="sub" style="font-size:14px; font-weight:800; color:#000; margin-bottom:3px;">{{ $shiftLabel }}</div>
+            <div class="sub">جرد فاتورة الفترة المحاسبية — {{ $startAt->format('Y/m/d h:i A') }} حتى {{ $endAt->format('Y/m/d h:i A') }}</div>
+        @else
+            <div class="sub">تقرير جرد الطاولات اليومي</div>
+        @endif
     </div>
 
     <div class="report-meta">
         <span><strong>التاريخ:</strong> {{ $targetDate->format('Y/m/d') }} — {{ $targetDate->translatedFormat('l') }}</span>
+        @if($shiftLabel)
+            <span style="font-weight:800; color:#000;"><strong>الفترة:</strong> {{ $shiftLabel }}</span>
+        @endif
         <span><strong>وقت الطباعة:</strong> {{ now()->format('h:i A') }}</span>
-        <span><strong>إجمالي الطاولات:</strong> {{ count($tableReport) }}</span>
+        <span><strong>إجمالي الطاولات:</strong> {{ $totalTables }}</span>
     </div>
 
     <!-- Quick Summary -->
@@ -198,7 +213,7 @@
         </div>
         <div class="summary-item">
             <div class="label">عدد الطاولات</div>
-            <div class="value">{{ count($tableReport) }}</div>
+            <div class="value">{{ $totalTables }}</div>
         </div>
         <div class="summary-item">
             <div class="label">عدد الأصناف</div>
@@ -207,7 +222,7 @@
     </div>
 
     <!-- ═══ TABLE DETAIL SECTION ═══ -->
-    <div class="section-title">📋 تفصيل جرد الطاولات</div>
+    <div class="section-title">📋 تفصيل جرد الصالات والطاولات</div>
 
     @if(empty($tableReport))
         <p style="text-align:center; color:#999; padding: 20px 0;">لا توجد طلبات مسجلة لهذا اليوم.</p>
@@ -215,51 +230,55 @@
     <table class="main-table">
         <thead>
             <tr>
-                <th style="width:12%">الطاولة</th>
-                <th style="width:10%">القسم</th>
-                <th style="width:30%">النوع</th>
+                <th style="width:12%">الصالة / القسم</th>
+                <th style="width:14%">رقم الطاولة</th>
+                <th style="width:28%">الصنف / النوع</th>
                 <th style="width:10%">الكمية</th>
-                <th style="width:22%">الموظف</th>
-                <th style="width:16%">الوقت</th>
+                <th style="width:16%">الموظف</th>
+                <th style="width:20%">التاريخ والوقت</th>
             </tr>
         </thead>
         <tbody>
             @php $grandTotal = 0; @endphp
-            @foreach($tableReport as $key => $report)
-                @php
-                    $tableTotal = array_sum(array_column($report['orders'], 'quantity'));
-                    $orderCount = count($report['orders']);
-                    $grandTotal += $tableTotal;
-                @endphp
-
-                {{-- Table group header row --}}
-                <tr class="table-group-row">
-                    <td colspan="3" style="text-align:right; padding-right: 12px;">
-                        🪑 طاولة {{ $report['table_number'] }}
-                        @if($report['section']) <span style="font-weight:400; font-size:10px;">({{ $report['section'] }})</span> @endif
-                        — {{ $orderCount }} طلبية
-                    </td>
-                    <td><strong>{{ $tableTotal }}</strong> رأس</td>
-                    <td colspan="2"></td>
-                </tr>
-
-                {{-- Individual orders for this table --}}
+            @foreach($tableReport as $sectionName => $report)
+                @php $sectionTotal = 0; @endphp
                 @foreach($report['orders'] as $ord)
+                @php 
+                    $grandTotal += $ord['quantity']; 
+                    $sectionTotal += $ord['quantity'];
+                @endphp
                 <tr>
-                    <td></td>
-                    <td></td>
+                    @if($loop->first)
+                    <td rowspan="{{ count($report['orders']) }}" style="font-weight: bold; background: #fafafa; vertical-align: middle; border-left: 2px solid #555;">
+                        🛋️ {{ $sectionName }}
+                    </td>
+                    @endif
+                    <td>طاولة {{ $ord['table_number'] }}</td>
                     <td style="text-align:right; font-weight:600;">{{ $ord['shisha_type'] }}</td>
-                    <td style="font-weight:800; font-size:13px;">{{ $ord['quantity'] }}</td>
-                    <td style="font-size:10px; color:#555;">{{ $ord['waiter'] }}</td>
-                    <td style="font-size:10px;">{{ $ord['time'] }}</td>
+                    <td style="font-weight:800; font-size:13px; color:#000;">{{ $ord['quantity'] }}</td>
+                    <td style="font-size:10px; color:#333;">
+                        <div style="font-weight: bold;">{{ $ord['waiter'] }}</div>
+                        @if($ord['ticket_barcode'])
+                            <div style="font-size: 9px; color: #666; margin-top: 2px;">تذكرة: {{ $ord['ticket_barcode'] }}</div>
+                        @endif
+                        @if($ord['manager_approval_status'] === 'approved' && $ord['approver_name'])
+                            <div style="font-size: 9px; color: #2E7D32; margin-top: 2px;">موافقة: {{ $ord['approver_name'] }}</div>
+                        @endif
+                    </td>
+                    <td style="font-size:10px; color:#333;">{{ $ord['datetime'] }}</td>
                 </tr>
                 @endforeach
+                <tr style="background-color: #f0f0f0; border-top: 1px solid #999; border-bottom: 2px solid #000;">
+                    <td colspan="3" style="text-align:right; padding-right:12px; font-weight: bold; font-size: 12px;">إجمالي {{ $sectionName }}</td>
+                    <td style="font-weight: 800; font-size: 14px;">{{ $sectionTotal }} رأس</td>
+                    <td colspan="2"></td>
+                </tr>
             @endforeach
 
             {{-- Grand total row --}}
             <tr class="total-row">
-                <td colspan="3" style="text-align:right; padding-right:12px;">الإجمالي الكلي</td>
-                <td>{{ $grandTotal }} رأس</td>
+                <td colspan="3" style="text-align:right; padding-right:12px; font-weight: bold;">الإجمالي الكلي</td>
+                <td style="font-weight: 800; font-size: 13px;">{{ $grandTotal }} رأس</td>
                 <td colspan="2"></td>
             </tr>
         </tbody>

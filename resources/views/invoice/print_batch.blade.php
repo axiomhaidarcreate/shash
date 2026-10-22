@@ -15,16 +15,17 @@
             background: #fff;
             color: #000;
             margin: 0;
-            padding: 5mm;
+            padding: 2mm 4mm;
             text-align: center;
             width: 80mm;
             box-sizing: border-box;
+            font-weight: 900;
         }
         .receipt {
-            width: 70mm;
+            width: 100%;
             margin: 0 auto;
             border: 1px dashed #ccc;
-            padding: 10px;
+            padding: 8px;
             box-sizing: border-box;
             word-wrap: break-word;
         }
@@ -38,27 +39,25 @@
         
         @media print {
             body { 
-                padding: 0; 
+                padding: 2mm 4mm; 
                 width: 80mm;
             }
             .receipt { 
                 border: none; 
-                padding: 5px; 
-                width: 74mm;
-                max-width: 74mm;
+                padding: 0; 
+                width: 100%;
             }
         }
     </style>
 </head>
 <body onload="window.print() {{ request('auto') ? '; setTimeout(window.close, 1000);' : '' }}">
-    @foreach(['نسخة العميل', 'نسخة موظف الجرد'] as $copyType)
     <div class="receipt">
         <h2>{{ $loungeName }}</h2>
-        <div style="font-weight: bold; margin-bottom: 10px; border: 1px solid #000; display: inline-block; padding: 2px 8px;">{{ $copyType }}</div>
+        <div style="font-weight: bold; margin-bottom: 10px; border: 1px solid #000; display: inline-block; padding: 2px 8px;">نسخة العميل</div>
         
         <div class="info">
             @if($loungePhone) <div>هاتف: {{ $loungePhone }}</div> @endif
-            <div>التاريخ: {{ now()->format('Y-m-d h:i A') }}</div>
+            <div>التاريخ والوقت: {{ now()->format('Y-m-d h:i A') }}</div>
             <div>طاولة رقم: {{ $orders->first()->table->number }} @if($orders->first()->table && $orders->first()->table->section)({{ $orders->first()->table->section }})@endif</div>
             <div>الموظف: {{ $orders->first()->user->name }}</div>
         </div>
@@ -95,11 +94,5 @@
             شكراً لزيارتكم
         </div>
     </div>
-    
-    @if($loop->first)
-    <div style="page-break-after: always; margin-bottom: 30px; border-bottom: 1px dashed #ccc; padding-bottom: 15px;"></div>
-    @endif
-    
-    @endforeach
 </body>
 </html>

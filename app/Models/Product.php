@@ -12,4 +12,16 @@ class Product extends Model
     {
         return $this->hasMany(StockEntry::class);
     }
+
+    public function ingredients()
+    {
+        return $this->belongsToMany(Product::class, 'product_ingredients', 'product_id', 'ingredient_id')
+                    ->withPivot('quantity')
+                    ->withTimestamps();
+    }
+
+    public function modifierGroups()
+    {
+        return $this->hasMany(ModifierGroup::class);
+    }
 }

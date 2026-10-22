@@ -1,8 +1,8 @@
 <div style="display: flex; justify-content: center; align-items: center; min-height: 80vh; min-height: 80dvh; padding: 1rem;">
     <div class="card glass" style="width: 100%; max-width: min(400px, 95vw);">
         <div style="text-align: center; margin-bottom: 2rem;">
-            <i class="fa-solid fa-wind fa-3x" style="color: var(--primary-color); margin-bottom: 1rem;"></i>
-            <h2 style="font-size: clamp(1.2rem, 4vw, 1.5rem);">نظام إدارة الشيشة</h2>
+            <img src="/images/mars-logo.png" alt="Mars Soft" style="width: 90px; height: 90px; border-radius: 50%; margin: 0 auto 1rem; display: block; object-fit: cover; border: 2px solid var(--primary-color); box-shadow: 0 4px 20px rgba(212, 175, 55, 0.3);">
+            <h2 style="font-size: clamp(1.2rem, 4vw, 1.5rem);">مارس سوفت</h2>
             <p style="color: var(--text-secondary); margin-top: 0.5rem; font-size: clamp(0.85rem, 2.5vw, 1rem);">تسجيل الدخول للموظفين</p>
         </div>
 

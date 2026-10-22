@@ -15,16 +15,17 @@
             background: #fff;
             color: #000;
             margin: 0;
-            padding: 5mm;
+            padding: 2mm 4mm;
             text-align: center;
             width: 80mm;
             box-sizing: border-box;
+            font-weight: 900;
         }
         .receipt {
-            width: 70mm;
+            width: 100%;
             margin: 0 auto;
             border: 1px dashed #ccc;
-            padding: 10px;
+            padding: 8px;
             box-sizing: border-box;
             word-wrap: break-word;
         }
@@ -37,25 +38,38 @@
         
         @media print {
             body { 
-                padding: 0; 
+                padding: 2mm 4mm; 
                 width: 80mm;
             }
             .receipt { 
                 border: none; 
-                padding: 5px; 
-                width: 74mm;
-                max-width: 74mm;
+                padding: 0; 
+                width: 100%;
             }
         }
     </style>
 </head>
 <body onload="window.print() {{ request('auto') ? '; setTimeout(window.close, 1000);' : '' }}">
     <div class="receipt">
-        <h2>فاتورة تحضير (مطبخ)</h2>
+        @php
+            $kitchen = \App\Models\Kitchen::where('slug', $order->target_kitchen)->first();
+            $kitchenName = $kitchen ? $kitchen->name : ($order->target_kitchen == 'barista' ? 'الباريستا' : ($order->target_kitchen == 'restaurant' ? 'المطعم' : 'الشيشة'));
+        @endphp
+        <h2>فاتورة مطبخ {{ $kitchenName }}</h2>
         <div class="info">
-            <div>الوقت: {{ $order->created_at->format('h:i A') }}</div>
+            <div>التاريخ والوقت: {{ $order->created_at->format('Y-m-d h:i A') }}</div>
             <div>رقم الطلب: #{{ $order->id }}</div>
-            <div style="font-size: 1.4rem; border: 2px solid #000; padding: 5px; margin-top: 5px;">طاولة: {{ $order->table->number }} @if($order->table && $order->table->section)({{ $order->table->section }})@endif</div>
+            @if($order->ticket_id && $order->ticket)
+                <div style="font-size: 1.1rem; border: 1px dashed #000; padding: 2px; margin: 4px 0;">
+                    رقم التذكرة: {{ $order->ticket->barcode }}
+                </div>
+            @endif
+            <div>الموظف: {{ $order->user->name ?? 'طلب ذاتي' }}</div>
+            @if($order->table)
+                <div style="font-size: 1.4rem; border: 2px solid #000; padding: 5px; margin-top: 5px;">{{ $order->table->number }} @if($order->table->section)({{ $order->table->section }})@endif</div>
+            @elseif($order->source === 'self_service')
+                <div style="font-size: 1.2rem; font-weight: 900; border: 2px solid #000; padding: 5px; margin-top: 5px;">طلب ذاتي 🎉</div>
+            @endif
         </div>
 
         <div class="details">
@@ -69,15 +83,18 @@
                 <tbody>
                     <tr>
                         <td>{{ $order->shisha_type }}</td>
-                        <td style="text-align: left; font-size: 1.4rem;">{{ $order->quantity }}</td>
+                        <td style="text-align: left; font-size: 2.0rem; font-weight: 900;">{{ $order->quantity }}</td>
                     </tr>
                 </tbody>
             </table>
         </div>
 
         @if($order->notes)
-        <div style="text-align: right; font-size: 1.1rem; margin-bottom: 10px; font-weight: bold; border: 2px dashed #000; padding: 5px;">
-            ملاحظات: {{ $order->notes }}
+        <div style="text-align: right; margin-bottom: 10px; border: 3px solid #000; padding: 8px;">
+            <div style="font-size: 1.2rem; font-weight: 900; margin-bottom: 4px; border-bottom: 1px dashed #000; padding-bottom: 4px;">★ تفاصيل الطلب:</div>
+            @foreach(explode(' | ', $order->notes) as $note)
+                <div style="font-size: 1.1rem; font-weight: bold; padding: 2px 0;">• {{ $note }}</div>
+            @endforeach
         </div>
         @endif
     </div>

@@ -12,7 +12,7 @@ class RolesAndUsersSeeder extends Seeder
      */
     public function run(): void
     {
-        $roles = ['admin', 'order_staff', 'kitchen_staff', 'delivery_staff', 'inventory_staff'];
+        $roles = ['admin', 'order_staff', 'kitchen_staff', 'delivery_staff', 'inventory_staff', 'reception_staff', 'daily_purchases_staff'];
         foreach ($roles as $role) {
             \Spatie\Permission\Models\Role::firstOrCreate(['name' => $role]);
         }
@@ -55,5 +55,21 @@ class RolesAndUsersSeeder extends Seeder
             'password' => \Illuminate\Support\Facades\Hash::make('password'),
         ]);
         $inventoryStaff->assignRole('inventory_staff');
+
+        $receptionStaff = \App\Models\User::firstOrCreate([
+            'email' => 'reception@shisha.com',
+        ], [
+            'name' => 'Reception Staff 1',
+            'password' => \Illuminate\Support\Facades\Hash::make('password'),
+        ]);
+        $receptionStaff->assignRole('reception_staff');
+
+        $dailyPurchasesStaff = \App\Models\User::firstOrCreate([
+            'email' => 'daily_purchases@shisha.com',
+        ], [
+            'name' => 'Daily Purchases Staff 1',
+            'password' => \Illuminate\Support\Facades\Hash::make('password'),
+        ]);
+        $dailyPurchasesStaff->assignRole('daily_purchases_staff');
     }
 }
