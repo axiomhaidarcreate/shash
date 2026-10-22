@@ -250,115 +250,133 @@
                             @php 
                                 $payroll = $emp->payrolls->first(); 
                                 if(!$payroll) {
-                                    $expected = \App\Http\Controllers\Web\PayrollController::calculateExpectedSalary($emp, $periodMonth, $periodYear);
+                                    $expected = \App\Http\Controllers\HR\PayrollController::calculateExpectedSalary($emp, $periodMonth, $periodYear);
                                 }
                             @endphp
-                        <tr class="bg-white hover:bg-slate-50 transition whitespace-nowrap">
-                            <td class="px-6 py-4 flex items-center gap-3">
-                                <img class="w-8 h-8 rounded-full object-cover" src="{{ $emp->avatar_url ?: 'https://ui-avatars.com/api/?name='.urlencode($emp->full_name_ar ?? $emp->full_name ?? '').'&background=random' }}" alt="Avatar">
-                                <div class="text-left" style="direction: ltr;">
-                                    <div class="text-sm font-bold text-primary text-right" style="direction: rtl;">{{ $emp->full_name_ar ?? 'موظف غير متوفر' }}</div>
-                                    <div class="font-normal text-slate-400 text-[10px] text-right" style="direction: rtl;">{{ $emp->employee_code }}</div>
+                        <tr>
+                            <td style="display: flex; align-items: center; gap: 12px; padding: 12px;">
+                                <img style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 1px solid var(--border-color);" 
+                                     src="{{ $emp->avatar_url ?: 'https://ui-avatars.com/api/?name='.urlencode($emp->full_name_ar ?? $emp->full_name ?? '').'&background=d4af37&color=000' }}" 
+                                     alt="Avatar">
+                                <div>
+                                    <div style="font-weight: 700; font-size: 0.95rem; color: var(--text-primary);">
+                                        {{ $emp->full_name_ar ?? 'موظف غير متوفر' }}
+                                    </div>
+                                    <div style="font-size: 0.75rem; color: var(--primary-color); font-weight: 600;">
+                                        {{ $emp->employee_code }}
+                                    </div>
                                 </div>
                             </td>
                             
                             @if($payroll && $payroll->status === 'paid')
                                 <!-- ✅ Paid Employee Row -->
-                                <td class="px-6 py-4 text-center text-primary font-bold" dir="ltr">{{ number_format($payroll->basic_salary, 2) }} ر.س</td>
-                                <td class="px-6 py-4 text-center text-red-500 font-bold" dir="ltr" title="غياب: {{ $payroll->absent_deduction }} | سلف وخصومات: {{ $payroll->other_deductions }} | سحوبات: {{ $payroll->withdrawal_deduction }}">
-                                    -{{ number_format($payroll->absent_deduction + $payroll->other_deductions + $payroll->withdrawal_deduction, 2) }} ر.س
+                                <td style="text-align: center; font-weight: 700; color: var(--text-primary);" dir="ltr">
+                                    {{ number_format($payroll->basic_salary, 2) }} <span style="font-size: 0.75rem; color: var(--text-secondary);">ر.س</span>
                                 </td>
-                                <td class="px-6 py-4 text-center font-bold text-emerald-600 text-lg" dir="ltr">{{ number_format($payroll->net_salary, 2) }} ر.س</td>
-                                <td class="px-6 py-4 text-center">
-                                    <span class="bg-emerald-100 text-emerald-700 text-[10px] font-bold px-3 py-1 rounded-full inline-block text-center border border-emerald-200">✅ تم الصرف</span>
+                                <td style="text-align: center; font-weight: 700; color: var(--danger-color);" dir="ltr" title="غياب: {{ $payroll->absent_deduction }} | سلف وخصومات: {{ $payroll->other_deductions }} | سحوبات: {{ $payroll->withdrawal_deduction }}">
+                                    -{{ number_format($payroll->absent_deduction + $payroll->other_deductions + $payroll->withdrawal_deduction, 2) }} <span style="font-size: 0.75rem;">ر.س</span>
                                 </td>
-                                <td class="px-6 py-4 text-center">
+                                <td style="text-align: center; font-weight: 800; font-size: 1.05rem; color: var(--success-color);" dir="ltr">
+                                    {{ number_format($payroll->net_salary, 2) }} <span style="font-size: 0.75rem;">ر.س</span>
+                                </td>
+                                <td style="text-align: center;">
+                                    <span class="badge badge-active"><i class="fa-solid fa-check-double"></i> تم الصرف</span>
+                                </td>
+                                <td style="text-align: center;">
                                     @if($payroll->employee_signature_url)
-                                        <span class="inline-flex items-center gap-1 text-xs text-emerald-700 font-bold">
-                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                                            وقّع + بصمة
+                                        <span style="display: inline-flex; align-items: center; gap: 4px; font-size: 0.8rem; color: var(--success-color); font-weight: 700;">
+                                            <i class="fa-solid fa-circle-check"></i> وقّع + بصمة
                                         </span>
                                     @else
-                                        <span class="text-xs text-slate-400">—</span>
+                                        <span style="color: var(--text-secondary); font-size: 0.85rem;">—</span>
                                     @endif
                                 </td>
-                                <td class="px-6 py-4 text-center">
-                                    <a href="{{ route('hr.payroll.slip', $payroll->id) }}" target="_blank" class="inline-flex items-center justify-center gap-2 bg-blue-50 text-blue-700 hover:bg-blue-600 hover:text-white px-4 py-2 rounded-xl text-xs font-bold transition border border-blue-100">
-                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M6.72 13.829c-.24.03-.48.062-.72.096m.72-.096a42.415 42.415 0 0110.56 0m-10.56 0L6.34 18m10.94-4.171c.24.03.48.062.72.096m-.72-.096L17.66 18m0 0l.229 2.523a1.125 1.125 0 01-1.12 1.227H7.231c-.662 0-1.18-.568-1.12-1.227L6.34 18m11.318 0h1.091A2.25 2.25 0 0021 15.75V9.456c0-1.081-.768-2.015-1.837-2.175a48.055 48.055 0 00-1.913-.247M6.34 18H5.25A2.25 2.25 0 013 15.75V9.456c0-1.081.768-2.015 1.837-2.175a48.041 48.041 0 011.913-.247m10.5 0a48.536 48.536 0 00-10.5 0v2.796c0 1.136.879 2.073 2.006 2.152a48.24 48.24 0 006.488 0c1.127-.08 2.006-1.016 2.006-2.152V10.25z" /></svg>
-                                        مسير الراتب
+                                <td style="text-align: center;">
+                                    <a href="{{ route('hr.payroll.slip', $payroll->id) }}" target="_blank" class="btn btn-outline btn-sm" style="font-size: 0.8rem; padding: 0.35rem 0.85rem;">
+                                        <i class="fa-solid fa-file-invoice"></i> مسير الراتب
                                     </a>
                                 </td>
 
                             @elseif($payroll && $payroll->status === 'approved')
                                 <!-- ⏳ Approved — Awaiting Employee Signature & Face -->
-                                <td class="px-6 py-4 text-center text-primary font-bold" dir="ltr">{{ number_format($payroll->basic_salary, 2) }} ر.س</td>
-                                <td class="px-6 py-4 text-center text-red-500 font-bold" dir="ltr" title="غياب: {{ $payroll->absent_deduction }} | سلف وخصومات: {{ $payroll->other_deductions }} | سحوبات: {{ $payroll->withdrawal_deduction }}">
-                                    -{{ number_format($payroll->absent_deduction + $payroll->other_deductions + $payroll->withdrawal_deduction, 2) }} ر.س
+                                <td style="text-align: center; font-weight: 700; color: var(--text-primary);" dir="ltr">
+                                    {{ number_format($payroll->basic_salary, 2) }} <span style="font-size: 0.75rem; color: var(--text-secondary);">ر.س</span>
                                 </td>
-                                <td class="px-6 py-4 text-center font-bold text-blue-600 text-lg" dir="ltr">{{ number_format($payroll->net_salary, 2) }} ر.س</td>
-                                <td class="px-6 py-4 text-center">
-                                    <span class="bg-blue-50 text-blue-700 text-[10px] font-bold px-3 py-1 rounded-full inline-block text-center border border-blue-200">⏳ بانتظار التوقيع</span>
+                                <td style="text-align: center; font-weight: 700; color: var(--danger-color);" dir="ltr" title="غياب: {{ $payroll->absent_deduction }} | سلف وخصومات: {{ $payroll->other_deductions }} | سحوبات: {{ $payroll->withdrawal_deduction }}">
+                                    -{{ number_format($payroll->absent_deduction + $payroll->other_deductions + $payroll->withdrawal_deduction, 2) }} <span style="font-size: 0.75rem;">ر.س</span>
                                 </td>
-                                <td class="px-6 py-4 text-center">
+                                <td style="text-align: center; font-weight: 800; font-size: 1.05rem; color: var(--info-color);" dir="ltr">
+                                    {{ number_format($payroll->net_salary, 2) }} <span style="font-size: 0.75rem;">ر.س</span>
+                                </td>
+                                <td style="text-align: center;">
+                                    <span class="badge" style="background: rgba(33, 150, 243, 0.15); color: var(--info-color); border: 1px solid rgba(33, 150, 243, 0.3);">
+                                        <i class="fa-solid fa-clock"></i> بانتظار التوقيع
+                                    </span>
+                                </td>
+                                <td style="text-align: center;">
                                     @if($payroll->employee_signature_url && $payroll->is_face_id_verified)
-                                        <span class="inline-flex items-center gap-1 text-xs text-emerald-700 font-bold bg-emerald-50 px-2 py-1 rounded-lg border border-emerald-200">
-                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                                            وقّع ✦ بصمة الوجه
+                                        <span class="badge badge-ready" style="gap: 4px;">
+                                            <i class="fa-solid fa-circle-check"></i> وقّع ✦ بصمة الوجه
                                         </span>
                                     @elseif($payroll->employee_signature_url)
-                                        <span class="inline-flex items-center gap-1 text-xs text-amber-700 font-bold bg-amber-50 px-2 py-1 rounded-lg border border-amber-200">
+                                        <span class="badge" style="background: rgba(255, 152, 0, 0.15); color: var(--warning-color); border: 1px solid rgba(255, 152, 0, 0.3);">
                                             ✍️ وقّع — بانتظار البصمة
                                         </span>
                                     @else
-                                        <span class="inline-flex items-center gap-1 text-xs text-secondary font-bold bg-slate-50 px-2 py-1 rounded-lg border border-slate-200">
-                                            🕐 لم يوقع بعد
+                                        <span style="font-size: 0.8rem; color: var(--text-secondary); font-weight: 600;">
+                                            <i class="fa-regular fa-clock"></i> لم يوقع بعد
                                         </span>
                                     @endif
                                 </td>
-                                <td class="px-6 py-4 text-center">
+                                <td style="text-align: center;">
                                     @if($payroll->employee_signature_url && $payroll->is_face_id_verified)
                                         {{-- الموظف وقّع وبصم — يمكن تأكيد الدفع --}}
-                                        <form action="{{ route('hr.payroll.confirmPayment', $payroll->id) }}" method="POST" class="inline">
+                                        <form action="{{ route('hr.payroll.confirmPayment', $payroll->id) }}" method="POST" style="display: inline;">
                                             @csrf @method('PATCH')
                                             <button type="submit"
                                                 onclick="return confirm('تأكيد صرف الراتب نهائياً؟ تم التحقق من توقيع الموظف وبصمة وجهه.')"
-                                                class="inline-flex items-center justify-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-xl text-xs font-bold transition shadow-sm">
-                                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                                                تأكيد الدفع ✅
+                                                class="btn btn-success btn-sm" style="font-size: 0.8rem; padding: 0.35rem 0.85rem;">
+                                                <i class="fa-solid fa-check"></i> تأكيد الدفع
                                             </button>
                                         </form>
                                     @else
                                         {{-- الموظف لم يوقع — الزر معطل --}}
                                         <button disabled
-                                            class="inline-flex items-center justify-center gap-2 bg-slate-100 text-slate-400 px-4 py-2 rounded-xl text-xs font-bold cursor-not-allowed"
+                                            class="btn btn-ghost btn-sm"
+                                            style="font-size: 0.8rem; opacity: 0.45; cursor: not-allowed; border: 1px dashed var(--border-color);"
                                             title="في انتظار توقيع الموظف وبصمة وجهه من التطبيق">
-                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" /></svg>
-                                            بانتظار التوقيع
+                                            <i class="fa-solid fa-lock"></i> بانتظار التوقيع
                                         </button>
                                     @endif
                                 </td>
 
                             @else
                                 <!-- 🔴 Unpaid Employee Row -->
-                                <td class="px-6 py-4 text-center text-primary font-bold" dir="ltr">{{ number_format($expected['gross'], 2) }} ر.س</td>
-                                <td class="px-6 py-4 text-center text-red-500 font-bold" dir="ltr" title="غياب: {{ $expected['absent_deduction'] }} | سلف وخصومات: {{ $expected['loan_deduction'] + ($expected['entitlement_deductions'] ?? 0) }} | سحوبات: {{ $expected['withdrawal_deduction'] ?? 0 }}">
-                                    -{{ number_format($expected['absent_deduction'] + $expected['loan_deduction'] + ($expected['withdrawal_deduction'] ?? 0) + ($expected['entitlement_deductions'] ?? 0), 2) }} ر.س
+                                @php
+                                    $totalDeductions = ($expected['absent_deduction'] ?? 0) + ($expected['loan_deduction'] ?? 0) + ($expected['withdrawal_deduction'] ?? 0) + ($expected['entitlement_deductions'] ?? 0);
+                                @endphp
+                                <td style="text-align: center; font-weight: 700; color: var(--text-primary);" dir="ltr">
+                                    {{ number_format($expected['gross'], 2) }} <span style="font-size: 0.75rem; color: var(--text-secondary);">ر.س</span>
                                 </td>
-                                <td class="px-6 py-4 text-center font-bold text-amber-600 text-lg" dir="ltr">{{ number_format($expected['net'], 2) }} ر.س</td>
-                                <td class="px-6 py-4 text-center">
-                                    <span class="bg-amber-100 text-amber-700 text-[10px] font-bold px-3 py-1 rounded-full inline-block text-center border border-amber-200">غير مدفوع</span>
+                                <td style="text-align: center; font-weight: 700; color: var(--danger-color);" dir="ltr" title="غياب: {{ $expected['absent_deduction'] }} | سلف وخصومات: {{ $expected['loan_deduction'] + ($expected['entitlement_deductions'] ?? 0) }} | سحوبات: {{ $expected['withdrawal_deduction'] ?? 0 }}">
+                                    -{{ number_format($totalDeductions, 2) }} <span style="font-size: 0.75rem;">ر.س</span>
                                 </td>
-                                <td class="px-6 py-4 text-center">
-                                    <span class="text-xs text-slate-400">—</span>
+                                <td style="text-align: center; font-weight: 800; font-size: 1.05rem; color: var(--warning-color);" dir="ltr">
+                                    {{ number_format($expected['net'], 2) }} <span style="font-size: 0.75rem;">ر.س</span>
                                 </td>
-                                <td class="px-6 py-4 text-center">
-                                    <form action="{{ route('hr.payroll.close_month', $emp) }}" method="POST">
+                                <td style="text-align: center;">
+                                    <span class="badge badge-pending">غير مدفوع</span>
+                                </td>
+                                <td style="text-align: center;">
+                                    <span style="color: var(--text-secondary); font-size: 0.85rem;">—</span>
+                                </td>
+                                <td style="text-align: center;">
+                                    <form action="{{ route('hr.payroll.close_month', $emp) }}" method="POST" style="display: inline;">
                                         @csrf
                                         <input type="hidden" name="month" value="{{ $periodMonth }}">
                                         <input type="hidden" name="year" value="{{ $periodYear }}">
-                                        <button type="submit" class="inline-flex items-center justify-center gap-2 bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2 rounded-xl text-xs font-bold transition shadow-sm" onclick="return confirm('إرسال طلب توقيع الراتب للموظف؟ سيظهر له في تطبيقه ليوقع ويبصم وجهه.')">
-                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" /></svg>
-                                            إرسال طلب توقيع
+                                        <button type="submit" class="btn btn-sm" style="font-size: 0.8rem; padding: 0.35rem 0.85rem;" onclick="return confirm('إرسال طلب توقيع الراتب للموظف؟ سيظهر له في تطبيقه ليوقع ويبصم وجهه.')">
+                                            <i class="fa-solid fa-paper-plane"></i> إرسال طلب توقيع
                                         </button>
                                     </form>
                                 </td>
@@ -366,12 +384,12 @@
                         </tr>
                         @empty
                             <tr>
-                                <td colspan="7" class="px-6 py-12 text-center">
-                                    <div class="flex flex-col items-center justify-center gap-3">
-                                        <div class="w-16 h-16 bg-slate-50 text-slate-300 rounded-full flex items-center justify-center">
-                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                <td colspan="7" style="text-align: center; padding: 3.5rem 1rem; color: var(--text-secondary);">
+                                    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.75rem;">
+                                        <div style="width: 50px; height: 50px; border-radius: 50%; background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); display: flex; align-items: center; justify-content: center; font-size: 1.4rem; color: var(--text-secondary);">
+                                            <i class="fa-solid fa-users-slash"></i>
                                         </div>
-                                        <div class="text-slate-400 font-bold">لا توجد بيانات حالياً.</div>
+                                        <div style="font-weight: 700; font-size: 0.95rem;">لا توجد بيانات حالياً.</div>
                                     </div>
                                 </td>
                             </tr>
