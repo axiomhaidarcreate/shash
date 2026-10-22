@@ -478,9 +478,7 @@
             @if(auth()->user()->hasRole('admin'))
                 <li><a href="{{ route('admin') }}" class="{{ request()->routeIs('admin') ? 'active' : '' }}"><i class="fa-solid fa-chart-line"></i> <span>لوحة التحكم</span></a></li>
                 <li><a href="{{ route('order') }}" class="{{ request()->routeIs('order') ? 'active' : '' }}"><i class="fa-solid fa-pen-to-square"></i> <span>الطلبات</span></a></li>
-                <li><a href="{{ route('kitchen') }}" class="{{ request()->routeIs('kitchen') ? 'active' : '' }}"><i class="fa-solid fa-fire"></i> <span>مطبخ الشيشة</span></a></li>
-                <li><a href="{{ route('barista') }}" class="{{ request()->routeIs('barista') ? 'active' : '' }}"><i class="fa-solid fa-mug-hot"></i> <span>مطبخ الباريستا</span></a></li>
-                <li><a href="{{ route('restaurant') }}" class="{{ request()->routeIs('restaurant') ? 'active' : '' }}"><i class="fa-solid fa-utensils"></i> <span>مطبخ المطعم</span></a></li>
+                <li><a href="{{ route('kitchens.portal') }}" class="{{ request()->routeIs('kitchens.portal') || request()->routeIs('kitchen') || request()->routeIs('barista') || request()->routeIs('restaurant') || request()->routeIs('dynamic.kitchen') ? 'active' : '' }}"><i class="fa-solid fa-kitchen-set"></i> <span>المطابخ</span></a></li>
                 <li><a href="{{ route('delivery') }}" class="{{ request()->routeIs('delivery') ? 'active' : '' }}"><i class="fa-solid fa-truck-fast"></i> <span>الطلبات الجاهزة</span></a></li>
             @elseif(auth()->user()->hasRole('order_staff'))
                 <li><a href="{{ route('order') }}" class="active"><i class="fa-solid fa-pen-to-square"></i> الطلبات</a></li>

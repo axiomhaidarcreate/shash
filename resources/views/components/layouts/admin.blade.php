@@ -361,29 +361,13 @@
                 <a href="{{ route('order') }}" class="sidebar-link {{ request()->routeIs('order') ? 'active' : '' }}" onclick="closeSidebarOnMobile()">
                     <i class="fa-solid fa-pen-to-square"></i> إنشاء طلب
                 </a>
-                {{-- ===== مجموعة المطبخ (dropdown) ===== --}}
+                {{-- ===== بوابة المطابخ (نفس نظام بوابة الموارد البشرية) ===== --}}
                 @php
-                    $kitchenActive = request()->routeIs('kitchen') || request()->routeIs('barista') || request()->routeIs('restaurant');
+                    $kitchenActive = request()->routeIs('kitchens.portal') || request()->routeIs('kitchen') || request()->routeIs('barista') || request()->routeIs('restaurant') || request()->routeIs('dynamic.kitchen');
                 @endphp
-                <div class="sidebar-dropdown {{ $kitchenActive ? 'open' : '' }}" id="kitchenDropdown">
-                    <button class="sidebar-link sidebar-dropdown-toggle {{ $kitchenActive ? 'active' : '' }}"
-                            onclick="toggleDropdown('kitchenDropdown')" type="button">
-                        <i class="fa-solid fa-fire"></i>
-                        <span style="flex:1;">المطبخ</span>
-                        <i class="fa-solid fa-chevron-down sidebar-dropdown-arrow" style="font-size:0.75rem; transition: transform 0.25s ease;"></i>
-                    </button>
-                    <div class="sidebar-submenu">
-                        <a href="{{ route('kitchen') }}" class="sidebar-link sidebar-sublink {{ request()->routeIs('kitchen') ? 'active' : '' }}" onclick="closeSidebarOnMobile()">
-                            <i class="fa-solid fa-wind" style="color: var(--primary-color);"></i> مطبخ الشيشة
-                        </a>
-                        <a href="{{ route('barista') }}" class="sidebar-link sidebar-sublink {{ request()->routeIs('barista') ? 'active' : '' }}" onclick="closeSidebarOnMobile()">
-                            <i class="fa-solid fa-mug-hot" style="color: #2196F3;"></i> مطبخ الباريستا
-                        </a>
-                        <a href="{{ route('restaurant') }}" class="sidebar-link sidebar-sublink {{ request()->routeIs('restaurant') ? 'active' : '' }}" onclick="closeSidebarOnMobile()">
-                            <i class="fa-solid fa-bowl-food" style="color: #4CAF50;"></i> مطبخ المطعم
-                        </a>
-                    </div>
-                </div>
+                <a href="{{ route('kitchens.portal') }}" class="sidebar-link {{ $kitchenActive ? 'active' : '' }}" onclick="closeSidebarOnMobile()">
+                    <i class="fa-solid fa-kitchen-set"></i> المطابخ
+                </a>
                 <a href="{{ route('delivery') }}" class="sidebar-link {{ request()->routeIs('delivery') ? 'active' : '' }}" onclick="closeSidebarOnMobile()">
                     <i class="fa-solid fa-truck-fast"></i> الطلبات الجاهزة
                 </a>

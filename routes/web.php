@@ -178,6 +178,19 @@ Route::middleware('auth')->group(function () {
     Route::get('/admin/expenses', \App\Livewire\Admin\Expenses::class)->name('admin.expenses')->middleware('role:admin');
     Route::get('/admin/reminders', \App\Livewire\Admin\Reminders::class)->name('admin.reminders')->middleware('role:admin');
     Route::get('/admin/daily-purchases-requests', \App\Livewire\Admin\DailyPurchasesBoard::class)->name('admin.daily_purchases_requests')->middleware('role:admin|daily_purchases_staff');
+    Route::get('/kitchens', function() {
+        $kitchens = \App\Models\Kitchen::where('is_active', true)->get();
+        $pendingCounts = \App\Models\Order::where('status', 'pending')
+            ->where(function($q) {
+                $q->whereNull('manager_approval_status')->orWhere('manager_approval_status', 'approved');
+            })
+            ->selectRaw('target_kitchen, count(*) as count')
+            ->groupBy('target_kitchen')
+            ->pluck('count', 'target_kitchen');
+
+        return view('kitchens.index', compact('kitchens', 'pendingCounts'));
+    })->name('kitchens.portal')->middleware('role:admin|kitchen_staff|barista_staff|restaurant_staff|dynamic_kitchen_staff');
+
     Route::get('/admin/kitchens', \App\Livewire\Admin\KitchensManager::class)->name('admin.kitchens')->middleware('role:admin');
     Route::get('/kitchen/{slug}', \App\Livewire\DynamicKitchenBoard::class)->name('dynamic.kitchen')->middleware('role:admin|dynamic_kitchen_staff');
     Route::get('/admin/customers', \App\Livewire\Admin\CustomersManager::class)->name('admin.customers')->middleware('role:admin|reception_staff');

@@ -4,6 +4,11 @@
         <!-- Secret Button -->
         <button onclick="handleSecretClick()" style="position: absolute; top: 0; right: 0; width: 60px; height: 60px; background: transparent; border: 1px dashed rgba(128, 128, 128, 0.3); border-radius: 8px; outline: none; z-index: 999; cursor: default;" title="إظهار أزرار الطباعة (3 ضغطات)"></button>
         <div style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
+            @if(auth()->user()->hasRole('admin'))
+                <a href="{{ route('kitchens.portal') }}" class="btn btn-outline" style="border: 1px solid var(--border-color); color: var(--text-secondary); background: rgba(0,0,0,0.2); padding: 0.35rem 0.8rem; font-size: 0.85rem; text-decoration: none;">
+                    <i class="fa-solid fa-arrow-right"></i> بوابة المطابخ
+                </a>
+            @endif
             <h2 style="font-size: clamp(1.1rem, 4vw, 1.4rem); margin: 0;"><i class="fa-solid fa-fire" style="color: var(--warning-color);"></i> مطبخ الشيشة</h2>
             <button onclick="Livewire.dispatch('openDailyPurchaseModal')" class="btn" style="background: linear-gradient(135deg, #FF9800, #F57C00); color: #fff; border: none; padding: 0.5rem 1rem; border-radius: var(--radius-sm); font-weight: bold; font-size: 0.9rem; box-shadow: 0 4px 15px rgba(255, 152, 0, 0.3); transition: all 0.3s; margin-right: 10px;">
                 <i class="fa-solid fa-cart-plus"></i> طلبات
