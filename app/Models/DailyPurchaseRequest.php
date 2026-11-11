@@ -20,6 +20,7 @@ class DailyPurchaseRequest extends Model
         'status',
         'requested_by',
         'invoice_image',
+        'price',
     ];
 
     public function user()

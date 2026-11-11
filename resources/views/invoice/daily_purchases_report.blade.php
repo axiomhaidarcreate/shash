@@ -32,16 +32,6 @@
 
     <div class="meta">
         <div class="meta-box">
-            <div class="label">الفترة الزمنية (تاريخ الاحتياج)</div>
-            <div class="value">
-                @if($filterFrom || $filterTo)
-                    {{ $filterFrom ?: 'البداية' }} — {{ $filterTo ?: 'النهاية' }}
-                @else
-                    الكل
-                @endif
-            </div>
-        </div>
-        <div class="meta-box">
             <div class="label">المطبخ</div>
             <div class="value">{{ $kitchen ?: 'الكل' }}</div>
         </div>
@@ -52,6 +42,10 @@
         <div class="meta-box">
             <div class="label">إجمالي الطلبات</div>
             <div class="value" style="color: #c0392b;">{{ $requests->count() }} طلب</div>
+        </div>
+        <div class="meta-box">
+            <div class="label">المجموع الكلي للمشتريات</div>
+            <div class="value" style="color: #27ae60;">{{ number_format($requests->sum('price'), 2) }} ر.س</div>
         </div>
         <div class="meta-box">
             <div class="label">تاريخ الطباعة</div>
@@ -67,7 +61,8 @@
                 <th>اسم الصنف</th>
                 <th>العدد / الكمية</th>
                 <th>الأهمية</th>
-                <th>تاريخ الاحتياج</th>
+                <th>تاريخ الإضافة</th>
+                <th>السعر</th>
                 <th>الحالة</th>
             </tr>
         </thead>
@@ -79,17 +74,29 @@
                 <td style="font-weight: 700; color: #1a1a2e;">{{ $request->item_name }}</td>
                 <td>{{ $request->quantity }} {{ $request->weight_or_ml ? '(' . $request->weight_or_ml . ')' : '' }}</td>
                 <td>{{ $request->importance }}</td>
-                <td>{{ \Carbon\Carbon::parse($request->needed_date)->format('Y-m-d') }}</td>
+                <td>{{ $request->created_at->format('Y-m-d h:i A') }}</td>
+                <td style="font-weight: bold; color: #27ae60;">
+                    {{ $request->price !== null ? number_format($request->price, 2) . ' ر.س' : '-' }}
+                </td>
                 <td style="{{ $request->status == 'معلق' ? 'color: #e67e22;' : 'color: #27ae60;' }} font-weight: bold;">
                     {{ $request->status }}
                 </td>
             </tr>
             @empty
             <tr>
-                <td colspan="7" style="text-align: center; padding: 20px; color: #888;">لا توجد طلبات مشتريات مطابقة للبحث</td>
+                <td colspan="8" style="text-align: center; padding: 20px; color: #888;">لا توجد طلبات مشتريات مطابقة للبحث</td>
             </tr>
             @endforelse
         </tbody>
+        @if($requests->count() > 0)
+        <tfoot>
+            <tr style="background: #f0f0f0; font-weight: bold;">
+                <td colspan="6" style="text-align: left; padding: 10px;">المجموع الكلي للمشتريات اليومية:</td>
+                <td style="color: #27ae60; font-size: 13px; font-weight: bold;">{{ number_format($requests->sum('price'), 2) }} ر.س</td>
+                <td></td>
+            </tr>
+        </tfoot>
+        @endif
     </table>
 
     <div class="footer">

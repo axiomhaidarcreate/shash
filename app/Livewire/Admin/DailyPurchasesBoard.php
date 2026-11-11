@@ -19,12 +19,11 @@ class DailyPurchasesBoard extends Component
     public $search = '';
     public $filterStatus = '';
     public $filterKitchen = '';
-    public $filterDateFrom;
-    public $filterDateTo;
 
     // Employee: Invoice upload modal
     public $showInvoiceModal = false;
     public $purchaseRequestId = null;
+    public $purchasePrice = null;
     public $invoiceImage;
 
     // Form fields
@@ -54,12 +53,20 @@ class DailyPurchasesBoard extends Component
     public function mount()
     {
         $this->isAdmin = Auth::user()->hasRole('admin');
-        $this->filterDateFrom = Carbon::today()->format('Y-m-d');
-        $this->filterDateTo = Carbon::today()->format('Y-m-d');
         $this->needed_date = Carbon::today()->format('Y-m-d');
     }
 
     public function updatingSearch()
+    {
+        $this->resetPage();
+    }
+
+    public function updatingFilterStatus()
+    {
+        $this->resetPage();
+    }
+
+    public function updatingFilterKitchen()
     {
         $this->resetPage();
     }
@@ -135,6 +142,12 @@ class DailyPurchasesBoard extends Component
     {
         $this->purchaseRequestId = $id;
         $this->invoiceImage = null;
+        $this->purchasePrice = null;
+        $req = DailyPurchaseRequest::find($id);
+        if ($req && $req->price !== null) {
+            $this->purchasePrice = $req->price;
+        }
+        $this->resetValidation();
         $this->showInvoiceModal = true;
     }
 
@@ -143,26 +156,32 @@ class DailyPurchasesBoard extends Component
         $this->showInvoiceModal = false;
         $this->purchaseRequestId = null;
         $this->invoiceImage = null;
+        $this->purchasePrice = null;
+        $this->resetValidation();
     }
 
-    // Employee: confirm purchase with invoice image
+    // Employee: confirm purchase with invoice image & price
     public function confirmPurchase()
     {
         $this->validate([
-            'invoiceImage' => 'required|image|max:5120',
+            'purchasePrice' => 'nullable|numeric|min:0',
+            'invoiceImage' => 'nullable|image|max:5120',
         ], [
-            'invoiceImage.required' => 'يجب إرفاق صورة الفاتورة قبل تأكيد الشراء.',
+            'purchasePrice.numeric' => 'يجب أن يكون السعر قيمة عددية.',
+            'purchasePrice.min' => 'يجب ألا يقل السعر عن 0.',
             'invoiceImage.image' => 'يجب أن يكون المرفق صورة.',
+            'invoiceImage.max' => 'حجم الصورة لا يجب أن يتجاوز 5 ميجابايت.',
         ]);
 
         $req = DailyPurchaseRequest::find($this->purchaseRequestId);
         if ($req && $req->status === 'معلق') {
-            $path = $this->invoiceImage->store('daily_purchases_invoices', 'public');
+            $path = $this->invoiceImage ? $this->invoiceImage->store('daily_purchases_invoices', 'public') : $req->invoice_image;
             $req->update([
                 'status' => 'تم الشراء',
+                'price' => ($this->purchasePrice !== null && $this->purchasePrice !== '') ? $this->purchasePrice : null,
                 'invoice_image' => $path,
             ]);
-            $this->dispatch('show-toast', message: 'تم تأكيد الشراء وإرفاق الفاتورة بنجاح', type: 'success');
+            $this->dispatch('show-toast', message: 'تم تأكيد الشراء بنجاح', type: 'success');
         }
 
         $this->closeInvoiceModal();
@@ -186,18 +205,14 @@ class DailyPurchasesBoard extends Component
             $query->where('kitchen_source', $this->filterKitchen);
         }
 
-        if ($this->filterDateFrom) {
-            $query->whereDate('needed_date', '>=', $this->filterDateFrom);
-        }
-
-        if ($this->filterDateTo) {
-            $query->whereDate('needed_date', '<=', $this->filterDateTo);
-        }
+        // Total purchases sum
+        $totalPurchases = (clone $query)->whereNotNull('price')->sum('price');
 
         $requests = $query->paginate(15);
 
         return view('livewire.admin.daily-purchases-board', [
             'requests' => $requests,
+            'totalPurchases' => $totalPurchases,
         ])->layout('components.layouts.admin', ['title' => 'مشتريات الطلبات اليومية']);
     }
 }

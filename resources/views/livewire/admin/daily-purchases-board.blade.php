@@ -90,7 +90,7 @@
 
     <!-- Filters -->
     <div class="card" style="margin-bottom: 1.5rem;">
-        <div class="grid grid-cols-{{ $isAdmin ? '4' : '5' }}">
+        <div class="grid grid-cols-{{ $isAdmin ? '2' : '3' }}" style="gap: 1rem;">
             <div class="form-group" style="margin-bottom: 0;">
                 <label class="form-label"><i class="fa-solid fa-magnifying-glass"></i> بحث باسم الصنف</label>
                 <input type="text" class="form-control" wire:model.live.debounce.300ms="search" placeholder="ابحث هنا...">
@@ -119,19 +119,9 @@
                     <option value="تحايا">تحايا</option>
                 </select>
             </div>
-
-            <div class="form-group" style="margin-bottom: 0;">
-                <label class="form-label"><i class="fa-regular fa-calendar"></i> من تاريخ</label>
-                <input type="date" class="form-control" wire:model.live="filterDateFrom">
-            </div>
-
-            <div class="form-group" style="margin-bottom: 0;">
-                <label class="form-label"><i class="fa-regular fa-calendar"></i> إلى تاريخ</label>
-                <input type="date" class="form-control" wire:model.live="filterDateTo">
-            </div>
         </div>
         <div style="margin-top: 15px; display: flex; justify-content: flex-end;">
-            <a href="{{ route('admin.daily_purchases.print', ['from' => $filterDateFrom, 'to' => $filterDateTo, 'search' => $search, 'status' => $filterStatus, 'kitchen' => $filterKitchen]) }}" target="_blank" class="btn" style="background: linear-gradient(135deg, #1976D2, #1565C0); color: white; text-decoration: none;">
+            <a href="{{ route('admin.daily_purchases.print', ['search' => $search, 'status' => $filterStatus, 'kitchen' => $filterKitchen]) }}" target="_blank" class="btn" style="background: linear-gradient(135deg, #1976D2, #1565C0); color: white; text-decoration: none;">
                 <i class="fa-solid fa-print"></i> طباعة التقرير
             </a>
         </div>
@@ -148,8 +138,8 @@
                         <th>اسم الصنف</th>
                         <th>العدد / الكمية</th>
                         <th>الأهمية</th>
-                        <th>تاريخ الاحتياج</th>
                         <th>تاريخ الإضافة</th>
+                        <th>السعر</th>
                         <th>فاتورة الشراء</th>
                         <th>الحالة</th>
                         <th class="no-print">إجراءات</th>
@@ -190,10 +180,16 @@
                                     <span style="color: var(--text-secondary);">عادي</span>
                                 @endif
                             </td>
-                            <td>{{ \Carbon\Carbon::parse($request->needed_date)->format('Y-m-d') }}</td>
                             <td>
                                 <div style="font-size: 0.8rem;">{{ $request->created_at->format('Y-m-d') }}</div>
                                 <div style="font-size: 0.75rem; color: var(--text-secondary);">{{ $request->created_at->format('h:i A') }}</div>
+                            </td>
+                            <td>
+                                @if($request->price !== null)
+                                    <span style="font-weight: bold; color: var(--success-color);">{{ number_format($request->price, 2) }} ر.س</span>
+                                @else
+                                    <span style="color: var(--text-secondary); font-size: 0.85rem;">-</span>
+                                @endif
                             </td>
                             <td>
                                 @if($request->invoice_image)
@@ -228,10 +224,10 @@
                                         </button>
                                     </div>
                                 @else
-                                    {{-- Employee: Mark as Purchased (opens invoice modal) --}}
+                                    {{-- Employee: Mark as Purchased (opens invoice & price modal) --}}
                                     @if($request->status == 'معلق')
                                         <button wire:click="openInvoiceModal({{ $request->id }})" class="btn btn-success btn-sm">
-                                            <i class="fa-solid fa-camera"></i> تم الشراء
+                                            <i class="fa-solid fa-check"></i> تم الشراء
                                         </button>
                                     @else
                                         @if($request->updated_at)
@@ -252,6 +248,20 @@
                         </tr>
                     @endforelse
                 </tbody>
+                @if($requests->count() > 0)
+                <tfoot style="background: rgba(0,0,0,0.3); font-weight: bold; border-top: 2px solid var(--border-color);">
+                    <tr>
+                        <td colspan="6" style="text-align: left; padding: 12px 16px; font-size: 0.95rem; color: var(--text-primary);">
+                            <i class="fa-solid fa-calculator" style="margin-left: 6px; color: var(--primary-color);"></i>
+                            المجموع الكلي للمشتريات اليومية:
+                        </td>
+                        <td style="color: var(--success-color); font-size: 1.15rem; font-weight: 800; padding: 12px;">
+                            {{ number_format($totalPurchases, 2) }} ر.س
+                        </td>
+                        <td colspan="3"></td>
+                    </tr>
+                </tfoot>
+                @endif
             </table>
         </div>
         <div style="margin-top: 15px;">
@@ -259,7 +269,7 @@
         </div>
     </div>
 
-    {{-- Employee Only: Invoice Upload Modal --}}
+    {{-- Employee Only: Invoice Upload & Price Modal --}}
     @if(!$isAdmin && $showInvoiceModal)
     <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 1000; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px);">
         <div class="card" style="width: 480px; max-width: 90%; position: relative;">
@@ -267,16 +277,24 @@
                 <i class="fa-solid fa-times"></i> إغلاق
             </button>
             <h3 style="margin-bottom: 1.5rem; color: var(--primary-color); border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;">
-                <i class="fa-solid fa-camera"></i> تأكيد الشراء - إرفاق فاتورة
+                <i class="fa-solid fa-cart-check"></i> تأكيد الشراء
             </h3>
 
-            <p style="color: var(--text-secondary); margin-bottom: 1.5rem; font-size: 0.9rem;">
+            <p style="color: var(--text-secondary); margin-bottom: 1.25rem; font-size: 0.9rem;">
                 <i class="fa-solid fa-circle-info" style="color: var(--info-color);"></i>
-                يجب تصوير أو إرفاق صورة فاتورة الشراء قبل تأكيد عملية الشراء.
+                يمكنك إدخال سعر الشراء وإرفاق صورة الفاتورة (اختياري) قبل تأكيد العملية.
             </p>
 
+            <div class="form-group" style="margin-bottom: 1.25rem;">
+                <label class="form-label">سعر الشراء (ر.س) <span style="color: var(--text-secondary); font-size: 0.85rem;">(اختياري)</span></label>
+                <input type="number" step="0.01" min="0" class="form-control" wire:model="purchasePrice" placeholder="أدخل مبلغ الشراء..." style="padding: 10px;">
+                @error('purchasePrice')
+                    <span style="color: var(--danger-color); font-size: 0.8rem; display: block; margin-top: 5px;">{{ $message }}</span>
+                @enderror
+            </div>
+
             <div class="form-group">
-                <label class="form-label">صورة الفاتورة <span style="color: var(--danger-color);">* (إجباري)</span></label>
+                <label class="form-label">صورة الفاتورة <span style="color: var(--text-secondary); font-size: 0.85rem;">(اختياري)</span></label>
                 <input type="file" class="form-control" wire:model="invoiceImage" accept="image/*" capture="environment" style="padding: 12px;">
                 <div wire:loading wire:target="invoiceImage" style="font-size: 0.85rem; color: var(--warning-color); margin-top: 8px;">
                     <i class="fa-solid fa-spinner fa-spin"></i> جاري رفع الصورة...
