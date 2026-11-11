@@ -78,6 +78,60 @@
         </div>
     </div>
 
+    <!-- System Maintenance & Updates Card -->
+    <div class="card" style="margin-bottom: 1.5rem; border-top: 3px solid #2196F3;">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 1rem;">
+            <div>
+                <h3 style="margin: 0; color: #2196F3; font-size: 1.25rem;">
+                    <i class="fa-solid fa-cloud-arrow-down"></i> تحديث وصيانة النظام
+                </h3>
+                <p style="color: var(--text-secondary); margin: 5px 0 0 0; font-size: 0.9rem;">
+                    تحديث كود وسيرفر النظام، تنفيذ ملفات ترحيل قاعدة البيانات (Migrations)، وتفريغ ملفات الكاش والتخزين المؤقت.
+                </p>
+            </div>
+            <span style="font-size: 0.8rem; background: rgba(33, 150, 243, 0.15); color: #2196F3; border: 1px solid rgba(33, 150, 243, 0.3); padding: 4px 10px; border-radius: 20px;">
+                <i class="fa-solid fa-server"></i> {{ request()->getHost() }}
+            </span>
+        </div>
+
+        <div style="display: flex; flex-wrap: wrap; gap: 12px; margin-top: 1.2rem; align-items: center;">
+            <button wire:click="updateSystem"
+                    wire:confirm="هل أنت متأكد من رغبتك في تحديث النظام بالكامل؟ سيتم سحب آخر التعديلات وتحديث قاعدة البيانات وتفريغ الكاش."
+                    class="btn" style="background: linear-gradient(135deg, #1976D2, #1565C0); color: white; padding: 0.65rem 1.4rem; font-weight: bold; border-radius: var(--radius-sm); border: none;">
+                <i class="fa-solid fa-arrows-rotate"></i> تحديث النظام الشامل
+            </button>
+
+            <button wire:click="runMigration"
+                    wire:confirm="هل تريد تشغيل ملفات ترحيل وتحديث قاعدة البيانات (Migrate) الآن؟"
+                    class="btn" style="background: linear-gradient(135deg, #388E3C, #2E7D32); color: white; padding: 0.65rem 1.4rem; font-weight: bold; border-radius: var(--radius-sm); border: none;">
+                <i class="fa-solid fa-database"></i> تحديث قاعدة البيانات (Migrations)
+            </button>
+
+            <button wire:click="clearSystemCache"
+                    class="btn btn-outline" style="border-radius: var(--radius-sm); padding: 0.65rem 1.2rem;">
+                <i class="fa-solid fa-broom"></i> مسح التخزين المؤقت (Cache)
+            </button>
+        </div>
+
+        <!-- Loading Indicator -->
+        <div wire:loading wire:target="updateSystem,runMigration,clearSystemCache" style="margin-top: 1rem; color: var(--warning-color); font-size: 0.95rem; font-weight: 600;">
+            <i class="fa-solid fa-spinner fa-spin"></i> جاري تنفيذ العملية... يرجى الانتظار لحظات دون إغلاق الصفحة.
+        </div>
+
+        <!-- Command Output Terminal Box -->
+        @if($systemActionOutput)
+            <div style="margin-top: 1.2rem; border-radius: var(--radius-sm); overflow: hidden; border: 1px solid {{ $systemActionStatus === 'error' ? 'var(--danger-color)' : 'rgba(255,255,255,0.1)' }};">
+                <div style="background: #1e1e1e; padding: 6px 12px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 0.8rem; color: var(--text-secondary);">
+                    <span><i class="fa-solid fa-terminal"></i> سجل العمليات والمخرجات</span>
+                    <button wire:click="$set('systemActionOutput', null)" style="background: none; border: none; color: #888; cursor: pointer; font-size: 0.85rem;" title="إغلاق السجل">
+                        <i class="fa-solid fa-times"></i>
+                    </button>
+                </div>
+                <pre style="background: #0f0f12; color: {{ $systemActionStatus === 'error' ? '#ff6b6b' : '#69f0ae' }}; padding: 1rem; margin: 0; font-family: Consolas, monospace; font-size: 0.85rem; line-height: 1.5; white-space: pre-wrap; direction: ltr; text-align: left; max-height: 250px; overflow-y: auto;">{{ $systemActionOutput }}</pre>
+            </div>
+        @endif
+    </div>
+
     <!-- Messaging Settings Card -->
     <div class="card" style="margin-bottom: 1.5rem;">
         <h3 style="margin-bottom: 1.2rem;"><i class="fa-brands fa-whatsapp" style="color: #25D366;"></i> إعدادات المراسلة (WhatsApp / SMS)</h3>

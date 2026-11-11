@@ -48,6 +48,10 @@ class Settings extends Component
     public $whatsapp_points_updated_template = '';
     public $whatsapp_reward_reached_template = '';
 
+    // System Maintenance & Updates
+    public $systemActionOutput = null;
+    public $systemActionStatus = null; // 'success' or 'error'
+
     public function mount()
     {
         $settings = \App\Models\Setting::all()->pluck('value', 'key')->toArray();
@@ -395,6 +399,75 @@ class Settings extends Component
         session()->flash('success', 'تم إغلاق الفترة المحاسبية يدوياً بنجاح.');
     }
 
+    public function runMigration()
+    {
+        $this->systemActionOutput = null;
+        try {
+            \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
+            $output = \Illuminate\Support\Facades\Artisan::output();
+            $this->systemActionStatus = 'success';
+            $this->systemActionOutput = "تم تحديث قاعدة البيانات (Migrations) بنجاح:\n\n" . (trim($output) ?: 'لا توجد جداول أو تعديلات جديدة لتطبيقها.');
+            session()->flash('success', 'تم تنفيذ تحديث قاعدة البيانات بنجاح.');
+        } catch (\Throwable $e) {
+            $this->systemActionStatus = 'error';
+            $this->systemActionOutput = "فشل تحديث قاعدة البيانات:\n" . $e->getMessage();
+            session()->flash('error', 'حدث خطأ أثناء تحديث قاعدة البيانات.');
+        }
+    }
+
+    public function updateSystem()
+    {
+        $this->systemActionOutput = null;
+        $log = [];
+        try {
+            // 1. Git pull if shell_exec is enabled on hosting
+            if (function_exists('shell_exec')) {
+                $baseDir = base_path();
+                $gitPull = shell_exec("cd \"{$baseDir}\" && git pull origin main 2>&1");
+                if ($gitPull) {
+                    $log[] = "=== سحب التحديثات (Git Pull) ===\n" . trim($gitPull);
+                }
+            }
+
+            // 2. Run migrations
+            \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
+            $migOutput = \Illuminate\Support\Facades\Artisan::output();
+            $log[] = "=== تحديث قاعدة البيانات (Migrations) ===\n" . (trim($migOutput) ?: 'قاعدة البيانات محدثة بالكامل.');
+
+            // 3. Clear and optimize caches
+            \Illuminate\Support\Facades\Artisan::call('view:clear');
+            \Illuminate\Support\Facades\Artisan::call('cache:clear');
+            \Illuminate\Support\Facades\Artisan::call('config:clear');
+            \Illuminate\Support\Facades\Artisan::call('route:clear');
+            $log[] = "=== مسح وتحديث ملفات التخزين المؤقت (Cache) ===\nتم مسح الكاش والمشاهد بنجاح.";
+
+            $this->systemActionStatus = 'success';
+            $this->systemActionOutput = implode("\n\n", $log);
+            session()->flash('success', 'تم تحديث النظام وقاعدة البيانات ومسح التخزين المؤقت بنجاح!');
+        } catch (\Throwable $e) {
+            $this->systemActionStatus = 'error';
+            $this->systemActionOutput = "حدث خطأ أثناء تحديث النظام:\n" . $e->getMessage();
+            session()->flash('error', 'حدث خطأ أثناء تحديث النظام.');
+        }
+    }
+
+    public function clearSystemCache()
+    {
+        $this->systemActionOutput = null;
+        try {
+            \Illuminate\Support\Facades\Artisan::call('view:clear');
+            \Illuminate\Support\Facades\Artisan::call('cache:clear');
+            \Illuminate\Support\Facades\Artisan::call('config:clear');
+            \Illuminate\Support\Facades\Artisan::call('route:clear');
+            $this->systemActionStatus = 'success';
+            $this->systemActionOutput = "تم مسح كافة ملفات التخزين المؤقت (Views, Config, Cache, Routes) بنجاح.";
+            session()->flash('success', 'تم تفريغ الكاش وتحديث النظام بنجاح.');
+        } catch (\Throwable $e) {
+            $this->systemActionStatus = 'error';
+            $this->systemActionOutput = "فشل مسح الكاش:\n" . $e->getMessage();
+            session()->flash('error', 'حدث خطأ أثناء مسح الكاش.');
+        }
+    }
 
     public function render()
     {
