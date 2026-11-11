@@ -139,6 +139,7 @@
             <table class="data-table">
                 <thead style="background-color: rgba(0,0,0,0.2);">
                     <tr>
+                        <th class="no-print" style="width: 70px; text-align: center;"><i class="fa-solid fa-arrows-up-down"></i> ترتيب</th>
                         <th>رقم الطلب</th>
                         <th>المطبخ</th>
                         <th>اسم الصنف</th>
@@ -151,9 +152,24 @@
                         <th class="no-print">إجراءات</th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody id="purchases-sortable-tbody">
                     @forelse($requests as $request)
-                        <tr>
+                        <tr data-id="{{ $request->id }}" wire:key="dpr-{{ $request->id }}">
+                            <td class="no-print" style="text-align: center; vertical-align: middle;">
+                                <div style="display: flex; align-items: center; justify-content: center; gap: 6px;">
+                                    <span class="drag-handle" style="cursor: grab; color: var(--text-secondary); padding: 4px;" title="اسحب لتغيير ترتيب الطلب">
+                                        <i class="fa-solid fa-grip-vertical" style="font-size: 1.15rem;"></i>
+                                    </span>
+                                    <div style="display: flex; flex-direction: column; gap: 2px;">
+                                        <button type="button" wire:click="moveUp({{ $request->id }})" class="btn-sort" title="نقل لأعلى" style="background: none; border: none; color: var(--text-secondary); cursor: pointer; padding: 0; line-height: 1;">
+                                            <i class="fa-solid fa-chevron-up" style="font-size: 0.75rem;"></i>
+                                        </button>
+                                        <button type="button" wire:click="moveDown({{ $request->id }})" class="btn-sort" title="نقل لأسفل" style="background: none; border: none; color: var(--text-secondary); cursor: pointer; padding: 0; line-height: 1;">
+                                            <i class="fa-solid fa-chevron-down" style="font-size: 0.75rem;"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </td>
                             <td>#{{ $request->id }}</td>
                             <td>
                                 @if($request->kitchen_source == 'شيشة')
@@ -247,7 +263,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="10" style="text-align: center; padding: 2rem;">
+                            <td colspan="11" style="text-align: center; padding: 2rem;">
                                 <i class="fa-solid fa-box-open" style="font-size: 3rem; color: var(--border-color); margin-bottom: 1rem; display: block;"></i>
                                 <span style="color: var(--text-secondary);">لا توجد طلبات مشتريات مطابقة للبحث</span>
                             </td>
@@ -257,7 +273,7 @@
                 @if($requests->count() > 0)
                 <tfoot style="background: rgba(0,0,0,0.3); font-weight: bold; border-top: 2px solid var(--border-color);">
                     <tr>
-                        <td colspan="6" style="text-align: left; padding: 12px 16px; font-size: 0.95rem; color: var(--text-primary);">
+                        <td colspan="7" style="text-align: left; padding: 12px 16px; font-size: 0.95rem; color: var(--text-primary);">
                             <i class="fa-solid fa-calculator" style="margin-left: 6px; color: var(--primary-color);"></i>
                             المجموع الكلي للمشتريات اليومية:
                         </td>
@@ -319,4 +335,63 @@
         </div>
     </div>
     @endif
+
+    {{-- SortableJS Script & Styling --}}
+    <style>
+        .drag-handle {
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        .drag-handle:hover i {
+            color: var(--primary-color) !important;
+        }
+        .btn-sort:hover i {
+            color: var(--primary-color) !important;
+        }
+        .sortable-ghost {
+            opacity: 0.35;
+            background: rgba(212, 175, 55, 0.25) !important;
+            outline: 2px dashed var(--primary-color);
+        }
+        .sortable-chosen {
+            background: rgba(212, 175, 55, 0.15) !important;
+        }
+    </style>
+
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
+    <script>
+        function initDailyPurchasesSortable() {
+            const tbody = document.getElementById('purchases-sortable-tbody');
+            if (!tbody) return;
+
+            if (tbody._sortableInstance) {
+                tbody._sortableInstance.destroy();
+            }
+
+            tbody._sortableInstance = new Sortable(tbody, {
+                handle: '.drag-handle',
+                animation: 200,
+                ghostClass: 'sortable-ghost',
+                chosenClass: 'sortable-chosen',
+                onEnd: function () {
+                    const ids = [];
+                    tbody.querySelectorAll('tr[data-id]').forEach(function (row) {
+                        ids.push(row.getAttribute('data-id'));
+                    });
+                    if (ids.length > 0) {
+                        @this.call('updateOrder', ids);
+                    }
+                }
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', initDailyPurchasesSortable);
+        document.addEventListener('livewire:navigated', initDailyPurchasesSortable);
+        document.addEventListener('livewire:initialized', function () {
+            initDailyPurchasesSortable();
+            Livewire.hook('morph.updated', () => {
+                setTimeout(initDailyPurchasesSortable, 100);
+            });
+        });
+    </script>
 </div>

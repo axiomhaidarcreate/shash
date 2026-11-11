@@ -103,6 +103,7 @@ class DailyPurchasesBoard extends Component
             $this->dispatch('show-toast', message: 'تم تعديل الطلب بنجاح', type: 'success');
         } else {
             $data['requested_by'] = \Illuminate\Support\Facades\Auth::id() ?? 1;
+            $data['sort_order'] = (DailyPurchaseRequest::min('sort_order') ?? 1) - 1;
             DailyPurchaseRequest::create($data);
             $this->dispatch('show-toast', message: 'تم إضافة الطلب بنجاح', type: 'success');
         }
@@ -134,6 +135,70 @@ class DailyPurchasesBoard extends Component
         if ($req) {
             $req->delete();
             $this->dispatch('show-toast', message: 'تم حذف الطلب بنجاح', type: 'success');
+        }
+    }
+
+    // Manual Reordering: Drag and Drop
+    public function updateOrder($orderedIds)
+    {
+        if (!is_array($orderedIds)) return;
+
+        foreach ($orderedIds as $index => $id) {
+            DailyPurchaseRequest::where('id', $id)->update([
+                'sort_order' => $index + 1
+            ]);
+        }
+
+        $this->dispatch('show-toast', message: 'تم حفظ ترتيب الطلبات بنجاح', type: 'success');
+    }
+
+    // Manual Reordering: Move Up (Higher Priority)
+    public function moveUp($id)
+    {
+        $current = DailyPurchaseRequest::find($id);
+        if (!$current) return;
+
+        $query = DailyPurchaseRequest::query();
+        if (!$this->isAdmin) {
+            $query->whereDate('created_at', Carbon::today());
+        }
+
+        $prev = $query->where('sort_order', '<', $current->sort_order)
+            ->orderBy('sort_order', 'desc')
+            ->first();
+
+        if ($prev) {
+            $temp = $current->sort_order;
+            $current->sort_order = $prev->sort_order;
+            $prev->sort_order = $temp;
+            $current->save();
+            $prev->save();
+            $this->dispatch('show-toast', message: 'تم تقديم الطلب لأعلى', type: 'success');
+        }
+    }
+
+    // Manual Reordering: Move Down (Lower Priority)
+    public function moveDown($id)
+    {
+        $current = DailyPurchaseRequest::find($id);
+        if (!$current) return;
+
+        $query = DailyPurchaseRequest::query();
+        if (!$this->isAdmin) {
+            $query->whereDate('created_at', Carbon::today());
+        }
+
+        $next = $query->where('sort_order', '>', $current->sort_order)
+            ->orderBy('sort_order', 'asc')
+            ->first();
+
+        if ($next) {
+            $temp = $current->sort_order;
+            $current->sort_order = $next->sort_order;
+            $next->sort_order = $temp;
+            $current->save();
+            $next->save();
+            $this->dispatch('show-toast', message: 'تم تأخير الطلب لأسفل', type: 'success');
         }
     }
 
@@ -190,8 +255,13 @@ class DailyPurchasesBoard extends Component
     public function render()
     {
         $query = DailyPurchaseRequest::query()
-            ->with('user')
-            ->orderBy('created_at', 'desc');
+            ->with('user');
+
+        // For daily purchases employee: only show today's requests (disappears the next day)
+        // For admin: show all requests without hiding
+        if (!$this->isAdmin) {
+            $query->whereDate('created_at', Carbon::today());
+        }
 
         if ($this->search) {
             $query->where('item_name', 'like', '%' . $this->search . '%');
@@ -208,7 +278,8 @@ class DailyPurchasesBoard extends Component
         // Total purchases sum
         $totalPurchases = (clone $query)->whereNotNull('price')->sum('price');
 
-        $requests = $query->paginate(15);
+        // Order by manual sort_order ascending, then newest
+        $requests = $query->orderBy('sort_order', 'asc')->orderBy('id', 'desc')->paginate(30);
 
         return view('livewire.admin.daily-purchases-board', [
             'requests' => $requests,
