@@ -6,6 +6,12 @@
         <script>setTimeout(() => document.querySelector('.toast-container')?.remove(), 4000);</script>
     @endif
 
+    <div style="margin-bottom: 1.5rem;">
+        <a href="{{ route('admin.purchases') }}" class="btn btn-outline" style="border: 1px solid var(--border-color); color: var(--text-secondary); background: rgba(0,0,0,0.2); display: inline-flex; align-items: center; gap: 8px; text-decoration: none; padding: 0.5rem 1rem; border-radius: var(--radius-sm);">
+            <i class="fa-solid fa-arrow-right"></i> عودة لبوابة المشتريات والمخزون
+        </a>
+    </div>
+
     <div class="page-header">
         <h1><i class="fa-solid fa-file-invoice-dollar" style="color: var(--primary-color);"></i> إدارة المصروفات</h1>
         <p>تسجيل ومتابعة فواتير المصروفات والالتزامات التشغيلية</p>

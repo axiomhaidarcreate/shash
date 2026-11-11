@@ -1,4 +1,10 @@
 <div>
+    <div style="margin-bottom: 1.5rem;">
+        <a href="{{ route('admin.purchases') }}" class="btn btn-outline" style="border: 1px solid var(--border-color); color: var(--text-secondary); background: rgba(0,0,0,0.2); display: inline-flex; align-items: center; gap: 8px; text-decoration: none; padding: 0.5rem 1rem; border-radius: var(--radius-sm);">
+            <i class="fa-solid fa-arrow-right"></i> عودة لبوابة المشتريات والمخزون
+        </a>
+    </div>
+
     @if (session()->has('success'))
         <div style="background: rgba(76,175,80,0.1); border: 1px solid var(--success-color); color: var(--success-color); padding: 0.8rem 1.2rem; border-radius: var(--radius-sm); margin-bottom: 1.5rem; font-weight: 600; animation: slideDown 0.3s ease;">
             <i class="fa-solid fa-circle-check"></i> {{ session('success') }}
