@@ -408,51 +408,9 @@
                 @php
                     $purchasesActive = request()->routeIs('admin.purchases*') || request()->routeIs('admin.expenses') || request()->routeIs('admin.inventory') || request()->routeIs('admin.physical_inventory') || request()->routeIs('admin.daily_purchases_requests') || request()->routeIs('admin.products') || request()->routeIs('admin.reports');
                 @endphp
-                <div class="sidebar-dropdown {{ $purchasesActive ? 'open' : '' }}" id="purchasesDropdown">
-                    <button class="sidebar-link sidebar-dropdown-toggle {{ $purchasesActive ? 'active' : '' }}"
-                            onclick="toggleDropdown('purchasesDropdown')" type="button">
-                        <i class="fa-solid fa-cart-shopping"></i>
-                        <span style="flex:1;">المشتريات والمخزون</span>
-                        <i class="fa-solid fa-chevron-down sidebar-dropdown-arrow" style="font-size:0.75rem; transition: transform 0.25s ease;"></i>
-                    </button>
-                    <div class="sidebar-submenu">
-                        @role('admin')
-                        <a href="{{ route('admin.purchases') }}" class="sidebar-link sidebar-sublink {{ request()->routeIs('admin.purchases') ? 'active' : '' }}" onclick="closeSidebarOnMobile()">
-                            <i class="fa-solid fa-house" style="color: var(--primary-color);"></i> الرئيسية
-                        </a>
-                        <a href="{{ route('admin.purchases.invoices') }}" class="sidebar-link sidebar-sublink {{ request()->routeIs('admin.purchases.invoices') ? 'active' : '' }}" onclick="closeSidebarOnMobile()">
-                            <i class="fa-solid fa-file-invoice-dollar" style="color: #4CAF50;"></i> فواتير المشتريات
-                        </a>
-                        <a href="{{ route('admin.expenses') }}" class="sidebar-link sidebar-sublink {{ request()->routeIs('admin.expenses') ? 'active' : '' }}" onclick="closeSidebarOnMobile()">
-                            <i class="fa-solid fa-file-invoice-dollar" style="color: #F44336;"></i> المصروفات
-                        </a>
-                        <a href="{{ route('admin.purchases.suppliers') }}" class="sidebar-link sidebar-sublink {{ request()->routeIs('admin.purchases.suppliers') ? 'active' : '' }}" onclick="closeSidebarOnMobile()">
-                            <i class="fa-solid fa-users" style="color: #2196F3;"></i> الموردين
-                        </a>
-                        <a href="{{ route('admin.products') }}" class="sidebar-link sidebar-sublink {{ request()->routeIs('admin.products') ? 'active' : '' }}" onclick="closeSidebarOnMobile()">
-                            <i class="fa-solid fa-box-open" style="color: #9C27B0;"></i> المخزون والمنتجات
-                        </a>
-                        <a href="{{ route('admin.reports') }}" class="sidebar-link sidebar-sublink {{ request()->routeIs('admin.reports') ? 'active' : '' }}" onclick="closeSidebarOnMobile()">
-                            <i class="fa-solid fa-chart-pie" style="color: #FF5722;"></i> التقارير
-                        </a>
-                        @endrole
-
-                        @hasanyrole('admin|inventory_staff')
-                        <a href="{{ route('admin.inventory') }}" class="sidebar-link sidebar-sublink {{ request()->routeIs('admin.inventory') ? 'active' : '' }}" onclick="closeSidebarOnMobile()">
-                            <i class="fa-solid fa-boxes-stacked" style="color: #FF9800;"></i> حركة المخزون
-                        </a>
-                        <a href="{{ route('admin.physical_inventory') }}" class="sidebar-link sidebar-sublink {{ request()->routeIs('admin.physical_inventory') ? 'active' : '' }}" onclick="closeSidebarOnMobile()">
-                            <i class="fa-solid fa-clipboard-check" style="color: #00BCD4;"></i> الجرد الفعلي
-                        </a>
-                        @endhasanyrole
-
-                        @hasanyrole('admin|daily_purchases_staff')
-                        <a href="{{ route('admin.daily_purchases_requests') }}" class="sidebar-link sidebar-sublink {{ request()->routeIs('admin.daily_purchases_requests') ? 'active' : '' }}" onclick="closeSidebarOnMobile()">
-                            <i class="fa-solid fa-cart-arrow-down" style="color: #E91E63;"></i> طلبات المشتريات اليومية
-                        </a>
-                        @endhasanyrole
-                    </div>
-                </div>
+                <a href="{{ route('admin.purchases') }}" class="sidebar-link {{ $purchasesActive ? 'active' : '' }}" onclick="closeSidebarOnMobile()">
+                    <i class="fa-solid fa-cart-shopping"></i> المشتريات والمخزون
+                </a>
                 @endhasanyrole
 
                 @php $pendingReminders = \App\Models\Reminder::where('is_done', false)->count(); @endphp

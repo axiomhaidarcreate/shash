@@ -163,7 +163,7 @@ Route::middleware('auth')->group(function () {
         });
     });
     // --- End HR System Routes ---
-    Route::get('/admin/purchases', \App\Livewire\Admin\Purchases\Dashboard::class)->name('admin.purchases')->middleware('role:admin');
+    Route::get('/admin/purchases', \App\Livewire\Admin\Purchases\Dashboard::class)->name('admin.purchases')->middleware('role:admin|inventory_staff|daily_purchases_staff');
     Route::get('/admin/purchases/suppliers', \App\Livewire\Admin\Purchases\Suppliers::class)->name('admin.purchases.suppliers')->middleware('role:admin');
     Route::get('/admin/purchases/invoices', \App\Livewire\Admin\Purchases\Invoices::class)->name('admin.purchases.invoices')->middleware('role:admin');
     Route::get('/admin/products', \App\Livewire\Admin\Products::class)->name('admin.products')->middleware('role:admin');
