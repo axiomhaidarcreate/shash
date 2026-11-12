@@ -26,8 +26,8 @@
     <button class="print-btn" onclick="window.print()">🖨️ طباعة التقرير</button>
 
     <div class="header">
-        <h1>مشتريات الطلبات اليومية</h1>
-        <p>{{ $loungeName }}</p>
+        <h1>{{ $loungeName }}</h1>
+        <p>تقرير مشتريات الطلبات اليومية (النواقص)</p>
     </div>
 
     <div class="meta">

@@ -176,7 +176,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/admin/reception', \App\Livewire\AdminReception::class)->name('admin.reception')->middleware('role:admin');
     Route::get('/admin/shifts', \App\Livewire\AdminShiftSettings::class)->name('admin.shifts')->middleware('role:admin');
     Route::get('/admin/expenses', \App\Livewire\Admin\Expenses::class)->name('admin.expenses')->middleware('role:admin');
-    Route::get('/admin/reminders', \App\Livewire\Admin\Reminders::class)->name('admin.reminders')->middleware('role:admin|daily_purchases_staff|inventory_staff');
+    Route::get('/admin/reminders', \App\Livewire\Admin\Reminders::class)->name('admin.reminders')->middleware('role:admin');
     Route::get('/admin/daily-purchases-requests', \App\Livewire\Admin\DailyPurchasesBoard::class)->name('admin.daily_purchases_requests')->middleware('role:admin|daily_purchases_staff');
     Route::get('/kitchens', function() {
         $kitchens = \App\Models\Kitchen::where('is_active', true)->get();
