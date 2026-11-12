@@ -108,7 +108,7 @@
                 <label class="form-label"><i class="fa-solid fa-filter"></i> الحالة</label>
                 <select class="form-control" wire:model.live="filterStatus">
                     <option value="">الكل</option>
-                    <option value="معلق">معلق</option>
+                    <option value="معلق">لم يتم الشراء</option>
                     <option value="تم الشراء">تم الشراء</option>
                 </select>
             </div>
@@ -224,10 +224,10 @@
                             </td>
 
                             <td>
-                                @if($request->status == 'معلق')
-                                    <span class="badge badge-pending"><i class="fa-regular fa-clock"></i> معلق</span>
-                                @else
+                                @if($request->status == 'تم الشراء')
                                     <span class="badge badge-ready"><i class="fa-solid fa-check-double"></i> تم الشراء</span>
+                                @else
+                                    <span class="badge badge-pending"><i class="fa-regular fa-clock"></i> لم يتم الشراء</span>
                                 @endif
                             </td>
 

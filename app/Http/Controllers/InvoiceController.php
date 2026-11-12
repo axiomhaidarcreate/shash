@@ -776,10 +776,12 @@ class InvoiceController extends Controller
         $search     = $request->query('search', '');
         $status     = $request->query('status', '');
         $kitchen    = $request->query('kitchen', '');
+        $allDates   = $request->boolean('all_dates', false);
 
         $query = \App\Models\DailyPurchaseRequest::query()
             ->with('user')
-            ->orderBy('created_at', 'desc');
+            ->orderBy('sort_order', 'asc')
+            ->orderBy('id', 'desc');
 
         if ($search) {
             $query->where('item_name', 'like', '%' . $search . '%');
@@ -790,11 +792,22 @@ class InvoiceController extends Controller
         if ($kitchen) {
             $query->where('kitchen_source', $kitchen);
         }
-        if ($filterFrom) {
-            $query->whereDate('needed_date', '>=', $filterFrom);
-        }
-        if ($filterTo) {
-            $query->whereDate('needed_date', '<=', $filterTo);
+
+        $user = auth()->user();
+        $isAdmin = $user && $user->hasRole('admin');
+
+        // If specific date range is provided
+        if ($filterFrom && $filterTo) {
+            $query->whereDate('created_at', '>=', $filterFrom)
+                  ->whereDate('created_at', '<=', $filterTo);
+            $reportDateRange = "من {$filterFrom} إلى {$filterTo}";
+        } elseif ($isAdmin && $allDates) {
+            $reportDateRange = 'كافة الفترات';
+        } else {
+            // Default for employee and daily purchase printing: ONLY TODAY'S ORDERS
+            $today = \Carbon\Carbon::today()->format('Y-m-d');
+            $query->whereDate('created_at', $today);
+            $reportDateRange = "مشتريات اليوم ({$today})";
         }
 
         $requests = $query->get();
@@ -804,7 +817,7 @@ class InvoiceController extends Controller
         $printDate  = now()->format('Y-m-d h:i A');
 
         return view('invoice.daily_purchases_report', compact(
-            'requests', 'filterFrom', 'filterTo', 'search', 'status', 'kitchen', 'loungeName', 'printDate'
+            'requests', 'filterFrom', 'filterTo', 'search', 'status', 'kitchen', 'loungeName', 'printDate', 'reportDateRange'
         ));
     }
 

@@ -32,12 +32,24 @@
 
     <div class="meta">
         <div class="meta-box">
+            <div class="label">تاريخ الطلبات</div>
+            <div class="value" style="color: #1976D2;">{{ $reportDateRange ?? 'مشتريات اليوم' }}</div>
+        </div>
+        <div class="meta-box">
             <div class="label">المطبخ</div>
             <div class="value">{{ $kitchen ?: 'الكل' }}</div>
         </div>
         <div class="meta-box">
             <div class="label">الحالة</div>
-            <div class="value">{{ $status ?: 'الكل' }}</div>
+            <div class="value">
+                @if($status == 'تم الشراء')
+                    <span style="color: #27ae60;">تم الشراء</span>
+                @elseif($status == 'معلق')
+                    <span style="color: #d35400;">لم يتم الشراء</span>
+                @else
+                    الكل
+                @endif
+            </div>
         </div>
         <div class="meta-box">
             <div class="label">إجمالي الطلبات</div>
@@ -48,7 +60,7 @@
             <div class="value" style="color: #27ae60;">{{ number_format($requests->sum('price'), 2) }} ر.س</div>
         </div>
         <div class="meta-box">
-            <div class="label">تاريخ الطباعة</div>
+            <div class="label">تاريخ ووقت الطباعة</div>
             <div class="value">{{ $printDate }}</div>
         </div>
     </div>
@@ -78,8 +90,12 @@
                 <td style="font-weight: bold; color: #27ae60;">
                     {{ $request->price !== null ? number_format($request->price, 2) . ' ر.س' : '-' }}
                 </td>
-                <td style="{{ $request->status == 'معلق' ? 'color: #e67e22;' : 'color: #27ae60;' }} font-weight: bold;">
-                    {{ $request->status }}
+                <td style="font-weight: bold; {{ $request->status == 'تم الشراء' ? 'color: #27ae60;' : 'color: #d35400;' }}">
+                    @if($request->status == 'تم الشراء')
+                        تم الشراء
+                    @else
+                        لم يتم الشراء
+                    @endif
                 </td>
             </tr>
             @empty
