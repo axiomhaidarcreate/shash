@@ -801,13 +801,21 @@ class InvoiceController extends Controller
             $query->whereDate('created_at', '>=', $filterFrom)
                   ->whereDate('created_at', '<=', $filterTo);
             $reportDateRange = "من {$filterFrom} إلى {$filterTo}";
+        } elseif (!$isAdmin) {
+            // For employee: show pending orders (not yet purchased) + orders purchased today
+            $query->where(function ($q) {
+                $q->where('status', '!=', 'تم الشراء')
+                  ->orWhere(function ($sub) {
+                      $sub->where('status', 'تم الشراء')
+                          ->whereDate('updated_at', \Carbon\Carbon::today());
+                  });
+            });
+            $today = \Carbon\Carbon::today()->format('Y-m-d');
+            $reportDateRange = "مشتريات اليوم ({$today})";
         } elseif ($isAdmin && $allDates) {
             $reportDateRange = 'كافة الفترات';
         } else {
-            // Default for employee and daily purchase printing: ONLY TODAY'S ORDERS
-            $today = \Carbon\Carbon::today()->format('Y-m-d');
-            $query->whereDate('created_at', $today);
-            $reportDateRange = "مشتريات اليوم ({$today})";
+            $reportDateRange = 'كافة الفترات';
         }
 
         $requests = $query->get();

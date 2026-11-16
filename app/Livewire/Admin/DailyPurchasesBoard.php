@@ -160,7 +160,13 @@ class DailyPurchasesBoard extends Component
 
         $query = DailyPurchaseRequest::query();
         if (!$this->isAdmin) {
-            $query->whereDate('created_at', Carbon::today());
+            $query->where(function ($q) {
+                $q->where('status', '!=', 'تم الشراء')
+                  ->orWhere(function ($sub) {
+                      $sub->where('status', 'تم الشراء')
+                          ->whereDate('updated_at', Carbon::today());
+                  });
+            });
         }
 
         $prev = $query->where('sort_order', '<', $current->sort_order)
@@ -185,7 +191,13 @@ class DailyPurchasesBoard extends Component
 
         $query = DailyPurchaseRequest::query();
         if (!$this->isAdmin) {
-            $query->whereDate('created_at', Carbon::today());
+            $query->where(function ($q) {
+                $q->where('status', '!=', 'تم الشراء')
+                  ->orWhere(function ($sub) {
+                      $sub->where('status', 'تم الشراء')
+                          ->whereDate('updated_at', Carbon::today());
+                  });
+            });
         }
 
         $next = $query->where('sort_order', '>', $current->sort_order)
@@ -257,10 +269,18 @@ class DailyPurchasesBoard extends Component
         $query = DailyPurchaseRequest::query()
             ->with('user');
 
-        // For daily purchases employee: only show today's requests (disappears the next day)
-        // For admin: show all requests without hiding
+        // For daily purchases employee:
+        // - Orders not purchased yet (معلق / لم يتم الشراء) STAY visible until purchased.
+        // - Orders that were purchased (تم الشراء) disappear at the end of the day (only show if purchased today).
+        // For admin: show all requests without hiding anything.
         if (!$this->isAdmin) {
-            $query->whereDate('created_at', Carbon::today());
+            $query->where(function ($q) {
+                $q->where('status', '!=', 'تم الشراء')
+                  ->orWhere(function ($sub) {
+                      $sub->where('status', 'تم الشراء')
+                          ->whereDate('updated_at', Carbon::today());
+                  });
+            });
         }
 
         if ($this->search) {

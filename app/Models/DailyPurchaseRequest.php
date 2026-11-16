@@ -28,4 +28,14 @@ class DailyPurchaseRequest extends Model
     {
         return $this->belongsTo(User::class, 'requested_by');
     }
+
+    protected static function booted()
+    {
+        static::creating(function ($model) {
+            if (!$model->sort_order) {
+                $minOrder = static::min('sort_order') ?? 0;
+                $model->sort_order = $minOrder - 1;
+            }
+        });
+    }
 }

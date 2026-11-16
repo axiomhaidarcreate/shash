@@ -413,7 +413,6 @@
                 </a>
                 @endhasanyrole
 
-                @role('admin')
                 @php $pendingReminders = \App\Models\Reminder::where('is_done', false)->count(); @endphp
                 <a href="{{ route('admin.reminders') }}" class="sidebar-link {{ request()->routeIs('admin.reminders') ? 'active' : '' }}" onclick="closeSidebarOnMobile()">
                     <i class="fa-solid fa-bell"></i> التذكيرات
@@ -421,7 +420,6 @@
                         <span style="background: var(--danger-color); color: white; border-radius: 50%; width: 18px; height: 18px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.65rem; font-weight: 800; margin-right: auto;">{{ $pendingReminders }}</span>
                     @endif
                 </a>
-                @endrole
 
                 @role('admin')
                 @php

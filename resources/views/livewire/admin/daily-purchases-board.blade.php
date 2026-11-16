@@ -145,7 +145,6 @@
                         <th>اسم الصنف</th>
                         <th>العدد / الكمية</th>
                         <th>الأهمية</th>
-                        <th>تاريخ الإضافة</th>
                         <th>السعر</th>
                         <th>فاتورة الشراء</th>
                         <th>الحالة</th>
@@ -201,10 +200,6 @@
                                 @else
                                     <span style="color: var(--text-secondary);">عادي</span>
                                 @endif
-                            </td>
-                            <td>
-                                <div style="font-size: 0.8rem;">{{ $request->created_at->format('Y-m-d') }}</div>
-                                <div style="font-size: 0.75rem; color: var(--text-secondary);">{{ $request->created_at->format('h:i A') }}</div>
                             </td>
                             <td>
                                 @if($request->price !== null)
@@ -263,7 +258,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="11" style="text-align: center; padding: 2rem;">
+                            <td colspan="10" style="text-align: center; padding: 2rem;">
                                 <i class="fa-solid fa-box-open" style="font-size: 3rem; color: var(--border-color); margin-bottom: 1rem; display: block;"></i>
                                 <span style="color: var(--text-secondary);">لا توجد طلبات مشتريات مطابقة للبحث</span>
                             </td>
@@ -273,7 +268,7 @@
                 @if($requests->count() > 0)
                 <tfoot style="background: rgba(0,0,0,0.3); font-weight: bold; border-top: 2px solid var(--border-color);">
                     <tr>
-                        <td colspan="7" style="text-align: left; padding: 12px 16px; font-size: 0.95rem; color: var(--text-primary);">
+                        <td colspan="6" style="text-align: left; padding: 12px 16px; font-size: 0.95rem; color: var(--text-primary);">
                             <i class="fa-solid fa-calculator" style="margin-left: 6px; color: var(--primary-color);"></i>
                             المجموع الكلي للمشتريات اليومية:
                         </td>
