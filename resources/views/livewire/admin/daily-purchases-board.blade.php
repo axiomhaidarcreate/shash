@@ -282,7 +282,7 @@
             </table>
         </div>
         <div style="margin-top: 15px;">
-            {{ $requests->links() }}
+            {{ $requests->links('livewire.custom-pagination') }}
         </div>
     </div>
 

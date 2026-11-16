@@ -12,6 +12,11 @@ class DailyPurchasesBoard extends Component
 {
     use WithPagination, \Livewire\WithFileUploads;
 
+    public function paginationView()
+    {
+        return 'livewire.custom-pagination';
+    }
+
     // Role flag
     public $isAdmin = false;
 
