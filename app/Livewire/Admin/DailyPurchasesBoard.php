@@ -25,11 +25,12 @@ class DailyPurchasesBoard extends Component
     public $filterStatus = '';
     public $filterKitchen = '';
 
-    // Employee: Invoice upload modal
+    // Employee: Invoice upload & inquiry modal
     public $showInvoiceModal = false;
     public $purchaseRequestId = null;
     public $purchasePrice = null;
     public $purchaseNotes = '';
+    public $existingAdminReply = null;
     public $invoiceImage;
 
     // Admin: Confirmation & Review modal
@@ -42,6 +43,17 @@ class DailyPurchasesBoard extends Component
     public $adminConfirmNotes = '';
     public $adminConfirmInvoiceImage = null;
     public $newInvoiceImage;
+
+    // Admin: Reply to Employee's Note Modal
+    public $showAdminReplyModal = false;
+    public $adminReplyId = null;
+    public $adminReplyItemName = '';
+    public $adminReplyKitchen = '';
+    public $adminReplyQuantity = '';
+    public $adminReplyPrice = null;
+    public $adminReplyNotes = '';
+    public $adminReplyInvoiceImage = null;
+    public $adminReplyText = '';
 
     // Form fields
     public $showForm = false;
@@ -234,13 +246,14 @@ class DailyPurchasesBoard extends Component
         }
     }
 
-    // Employee: open invoice upload modal
+    // Employee: open invoice / inquiry modal
     public function openInvoiceModal($id)
     {
         $this->purchaseRequestId = $id;
         $this->invoiceImage = null;
         $this->purchasePrice = null;
         $this->purchaseNotes = '';
+        $this->existingAdminReply = null;
         $req = DailyPurchaseRequest::find($id);
         if ($req) {
             if ($req->price !== null) {
@@ -249,6 +262,7 @@ class DailyPurchasesBoard extends Component
             if ($req->notes !== null) {
                 $this->purchaseNotes = $req->notes;
             }
+            $this->existingAdminReply = $req->admin_reply;
         }
         $this->resetValidation();
         $this->showInvoiceModal = true;
@@ -261,7 +275,40 @@ class DailyPurchasesBoard extends Component
         $this->invoiceImage = null;
         $this->purchasePrice = null;
         $this->purchaseNotes = '';
+        $this->existingAdminReply = null;
         $this->resetValidation();
+    }
+
+    // Employee: Save note / inquiry for manager without confirming purchase yet
+    public function saveNoteOnly()
+    {
+        $this->validate([
+            'purchasePrice' => 'nullable|numeric|min:0',
+            'purchaseNotes' => 'required|string|max:1000',
+            'invoiceImage' => 'nullable|image|max:5120',
+        ], [
+            'purchasePrice.numeric' => 'يجب أن يكون السعر قيمة عددية.',
+            'purchasePrice.min' => 'يجب ألا يقل السعر عن 0.',
+            'purchaseNotes.required' => 'يرجى كتابة الملاحظة أو الاستفسار أولاً قبل الإرسال.',
+            'purchaseNotes.max' => 'يجب ألا تتجاوز الملاحظات 1000 حرف.',
+            'invoiceImage.image' => 'يجب أن يكون المرفق صورة.',
+            'invoiceImage.max' => 'حجم الصورة لا يجب أن يتجاوز 5 ميجابايت.',
+        ]);
+
+        $req = DailyPurchaseRequest::find($this->purchaseRequestId);
+        if ($req && $req->status === 'معلق') {
+            $path = $this->invoiceImage ? $this->invoiceImage->store('daily_purchases_invoices', 'public') : $req->invoice_image;
+            $req->update([
+                'price' => ($this->purchasePrice !== null && $this->purchasePrice !== '') ? $this->purchasePrice : $req->price,
+                'notes' => trim($this->purchaseNotes),
+                'invoice_image' => $path,
+                'admin_reply' => null, // Reset previous reply so manager sees new note
+                'admin_replied_at' => null,
+            ]);
+            $this->dispatch('show-toast', message: 'تم إرسال الملاحظة للمدير العام بنجاح وبانتظار رده', type: 'info');
+        }
+
+        $this->closeInvoiceModal();
     }
 
     // Employee: confirm purchase with invoice image, price & notes
@@ -294,6 +341,63 @@ class DailyPurchasesBoard extends Component
         }
 
         $this->closeInvoiceModal();
+    }
+
+    // Admin: Open modal to reply to employee's note
+    public function openAdminReplyModal($id)
+    {
+        if (!$this->isAdmin) return;
+
+        $req = DailyPurchaseRequest::find($id);
+        if (!$req) return;
+
+        $this->adminReplyId = $req->id;
+        $this->adminReplyItemName = $req->item_name;
+        $this->adminReplyKitchen = $req->kitchen_source;
+        $this->adminReplyQuantity = $req->quantity . ($req->weight_or_ml ? ' (' . $req->weight_or_ml . ')' : '');
+        $this->adminReplyPrice = $req->price;
+        $this->adminReplyNotes = $req->notes ?? '';
+        $this->adminReplyInvoiceImage = $req->invoice_image;
+        $this->adminReplyText = $req->admin_reply ?? 'نعم، تمام اشترها';
+        $this->resetValidation();
+        $this->showAdminReplyModal = true;
+    }
+
+    public function closeAdminReplyModal()
+    {
+        $this->showAdminReplyModal = false;
+        $this->adminReplyId = null;
+        $this->adminReplyItemName = '';
+        $this->adminReplyKitchen = '';
+        $this->adminReplyQuantity = '';
+        $this->adminReplyPrice = null;
+        $this->adminReplyNotes = '';
+        $this->adminReplyInvoiceImage = null;
+        $this->adminReplyText = '';
+        $this->resetValidation();
+    }
+
+    public function submitAdminReply()
+    {
+        if (!$this->isAdmin || !$this->adminReplyId) return;
+
+        $this->validate([
+            'adminReplyText' => 'required|string|max:1000',
+        ], [
+            'adminReplyText.required' => 'يرجى كتابة نص الرد أولاً.',
+            'adminReplyText.max' => 'يجب ألا يتجاوز الرد 1000 حرف.',
+        ]);
+
+        $req = DailyPurchaseRequest::find($this->adminReplyId);
+        if ($req) {
+            $req->update([
+                'admin_reply' => trim($this->adminReplyText),
+                'admin_replied_at' => now(),
+            ]);
+            $this->dispatch('show-toast', message: 'تم إرسال الرد لموظف المشتريات بنجاح', type: 'success');
+        }
+
+        $this->closeAdminReplyModal();
     }
 
     // Admin: Open confirmation modal to review/edit price, notes & invoice image

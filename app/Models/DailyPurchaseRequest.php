@@ -22,6 +22,8 @@ class DailyPurchaseRequest extends Model
         'invoice_image',
         'price',
         'notes',
+        'admin_reply',
+        'admin_replied_at',
         'is_admin_confirmed',
         'admin_confirmed_at',
         'sort_order',
@@ -30,6 +32,7 @@ class DailyPurchaseRequest extends Model
     protected $casts = [
         'is_admin_confirmed' => 'boolean',
         'admin_confirmed_at' => 'datetime',
+        'admin_replied_at' => 'datetime',
     ];
 
     public function user()

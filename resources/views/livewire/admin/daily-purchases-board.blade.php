@@ -244,12 +244,50 @@
                                     @endif
                                 @else
                                     <span class="badge badge-pending"><i class="fa-regular fa-clock"></i> لم يتم الشراء</span>
+
+                                    {{-- For Admin: Button to view & reply to note if present --}}
+                                    @if($isAdmin && !empty($request->notes))
+                                        @if(empty($request->admin_reply))
+                                            <div style="margin-top: 6px;">
+                                                <button type="button" wire:click="openAdminReplyModal({{ $request->id }})" 
+                                                        class="btn btn-sm" 
+                                                        style="background: linear-gradient(135deg, #FF9800, #F57C00); color: white; border: none; padding: 4px 10px; font-weight: bold; border-radius: 6px; display: inline-flex; align-items: center; gap: 5px; cursor: pointer; box-shadow: 0 2px 6px rgba(255, 152, 0, 0.35); font-size: 0.78rem;" 
+                                                        title="ملاحظة من موظف المشتريات - اضغط للرد والموافقة">
+                                                    <i class="fa-solid fa-bell"></i>
+                                                    <span>يوجد ملاحظة</span>
+                                                </button>
+                                            </div>
+                                        @else
+                                            <div style="margin-top: 6px;">
+                                                <button type="button" wire:click="openAdminReplyModal({{ $request->id }})" 
+                                                        class="btn btn-sm btn-outline" 
+                                                        style="padding: 3px 8px; font-size: 0.75rem; color: #4CAF50; border-color: rgba(76,175,80,0.3); display: inline-flex; align-items: center; gap: 4px;" 
+                                                        title="تم الرد على الملاحظة - اضغط لتعديل الرد">
+                                                    <i class="fa-solid fa-check-circle"></i>
+                                                    <span>تم الرد على الملاحظة</span>
+                                                </button>
+                                            </div>
+                                        @endif
+                                    @endif
                                 @endif
 
+                                {{-- Employee's Note Display --}}
                                 @if(!empty($request->notes))
                                     <div style="margin-top: 6px; font-size: 0.8rem; color: #ffeb3b; background: rgba(255, 235, 59, 0.08); border: 1px dashed rgba(255, 235, 59, 0.35); border-radius: 6px; padding: 4px 8px; display: flex; align-items: flex-start; gap: 5px; text-align: right; max-width: 220px; line-height: 1.4; word-break: break-word;" title="ملاحظات الشراء">
                                         <i class="fa-solid fa-comment-dots" style="margin-top: 3px; font-size: 0.8rem; flex-shrink: 0; color: #ffeb3b;"></i>
                                         <span>{{ $request->notes }}</span>
+                                    </div>
+                                @endif
+
+                                {{-- Admin's Reply Display (Visible to employee and admin) --}}
+                                @if(!empty($request->admin_reply))
+                                    <div style="margin-top: 5px; font-size: 0.82rem; color: #4CAF50; background: rgba(76, 175, 80, 0.12); border: 1px solid rgba(76, 175, 80, 0.35); border-radius: 6px; padding: 4px 8px; display: flex; align-items: flex-start; gap: 5px; text-align: right; max-width: 220px; font-weight: 700; line-height: 1.4; word-break: break-word;" title="رد المدير العام">
+                                        <i class="fa-solid fa-reply" style="margin-top: 3px; font-size: 0.8rem; flex-shrink: 0;"></i>
+                                        <span>رد المدير: {{ $request->admin_reply }}</span>
+                                    </div>
+                                @elseif(!$isAdmin && !empty($request->notes) && $request->status == 'معلق')
+                                    <div style="margin-top: 4px; font-size: 0.75rem; color: #FF9800; display: flex; align-items: center; gap: 4px;">
+                                        <i class="fa-solid fa-clock"></i> بانتظار رد المدير...
                                     </div>
                                 @endif
                             </td>
@@ -347,12 +385,22 @@
                 <i class="fa-solid fa-times"></i> إغلاق
             </button>
             <h3 style="margin-bottom: 1.5rem; color: var(--primary-color); border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;">
-                <i class="fa-solid fa-cart-check"></i> تأكيد الشراء
+                <i class="fa-solid fa-cart-shopping"></i> تفاصيل الشراء / استشارة المدير
             </h3>
+
+            @if(!empty($existingAdminReply))
+                <div style="background: rgba(76, 175, 80, 0.15); border: 1px solid rgba(76, 175, 80, 0.4); border-radius: 8px; padding: 10px 14px; margin-bottom: 1.25rem; color: #4CAF50; font-size: 0.95rem; display: flex; align-items: flex-start; gap: 8px;">
+                    <i class="fa-solid fa-reply" style="margin-top: 3px;"></i>
+                    <div>
+                        <strong>رد المدير العام:</strong>
+                        <div style="margin-top: 2px;">{{ $existingAdminReply }}</div>
+                    </div>
+                </div>
+            @endif
 
             <p style="color: var(--text-secondary); margin-bottom: 1.25rem; font-size: 0.9rem;">
                 <i class="fa-solid fa-circle-info" style="color: var(--info-color);"></i>
-                يمكنك إدخال سعر الشراء وإرفاق صورة الفاتورة (اختياري) قبل تأكيد العملية.
+                يمكنك كتابة ملاحظة للمدير (مثل: البديل المتوفر، عدم وجود الصنف) أو إتمام الشراء مباشرة.
             </p>
 
             <div class="form-group" style="margin-bottom: 1.25rem;">
@@ -364,15 +412,15 @@
             </div>
 
             <div class="form-group" style="margin-bottom: 1.25rem;">
-                <label class="form-label"><i class="fa-solid fa-pen-to-square"></i> ملاحظات الشراء <span style="color: var(--text-secondary); font-size: 0.85rem;">(اختياري)</span></label>
-                <textarea class="form-control" wire:model="purchaseNotes" rows="2" placeholder="أدخل أي ملاحظات حول الشراء..." style="padding: 10px; resize: vertical;"></textarea>
+                <label class="form-label"><i class="fa-solid fa-pen-to-square"></i> الملاحظات / الاستشارة <span style="color: var(--text-secondary); font-size: 0.85rem;">(مثال: الصنف غير متوفر ويوجد بديل)</span></label>
+                <textarea class="form-control" wire:model="purchaseNotes" rows="3" placeholder="اكتب ملاحظتك أو استفسارك للمدير هنا..." style="padding: 10px; resize: vertical;"></textarea>
                 @error('purchaseNotes')
                     <span style="color: var(--danger-color); font-size: 0.8rem; display: block; margin-top: 5px;">{{ $message }}</span>
                 @enderror
             </div>
 
             <div class="form-group">
-                <label class="form-label">صورة الفاتورة <span style="color: var(--text-secondary); font-size: 0.85rem;">(اختياري)</span></label>
+                <label class="form-label">صورة توضيحية / الفاتورة <span style="color: var(--text-secondary); font-size: 0.85rem;">(اختياري)</span></label>
                 <input type="file" class="form-control" wire:model="invoiceImage" accept="image/*" capture="environment" style="padding: 12px;">
                 <div wire:loading wire:target="invoiceImage" style="font-size: 0.85rem; color: var(--warning-color); margin-top: 8px;">
                     <i class="fa-solid fa-spinner fa-spin"></i> جاري رفع الصورة...
@@ -382,11 +430,16 @@
                 @enderror
             </div>
 
-            <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 1.5rem;">
-                <button wire:click="closeInvoiceModal" class="btn btn-outline">إلغاء</button>
-                <button wire:click="confirmPurchase" class="btn btn-success" style="padding: 10px 25px;">
-                    <i class="fa-solid fa-check-double"></i> تأكيد الشراء
-                </button>
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-top: 1.5rem; border-top: 1px solid var(--border-color); padding-top: 15px;">
+                <button type="button" wire:click="closeInvoiceModal" class="btn btn-outline">إلغاء</button>
+                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                    <button type="button" wire:click="saveNoteOnly" class="btn" style="background: linear-gradient(135deg, #FF9800, #F57C00); color: white; border: none; font-weight: 700; padding: 10px 18px;" title="حفظ الملاحظة وإرسالها للمدير العام لاستشارته دون إنهاء الشراء">
+                        <i class="fa-solid fa-paper-plane"></i> إرسال ملاحظة للمدير
+                    </button>
+                    <button type="button" wire:click="confirmPurchase" class="btn btn-success" style="padding: 10px 22px; font-weight: 700;">
+                        <i class="fa-solid fa-check-double"></i> تأكيد الشراء النهائي
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -483,6 +536,103 @@
                 <button wire:click="closeAdminConfirmModal" class="btn btn-outline">إلغاء</button>
                 <button wire:click="saveAdminConfirmation" class="btn btn-success" style="padding: 10px 25px; font-weight: 700; background: linear-gradient(135deg, #2e7d32, #1b5e20); border: none;">
                     <i class="fa-solid fa-circle-check"></i> تأكيد واعتماد الطلب
+                </button>
+            </div>
+        </div>
+    </div>
+    @endif
+
+    {{-- Admin Only: Reply to Employee's Note Modal --}}
+    @if($isAdmin && $showAdminReplyModal)
+    <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 1000; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px); padding: 15px; overflow-y: auto;">
+        <div class="card" style="width: 520px; max-width: 95%; max-height: 90vh; overflow-y: auto; position: relative; border-top: 4px solid #FF9800;">
+            <button wire:click="closeAdminReplyModal" class="btn btn-outline" style="position: absolute; top: 15px; left: 15px; padding: 5px 10px;">
+                <i class="fa-solid fa-times"></i> إغلاق
+            </button>
+            <h3 style="margin-bottom: 0.5rem; color: #FF9800; padding-bottom: 5px; display: flex; align-items: center; gap: 8px;">
+                <i class="fa-solid fa-comments"></i> ملاحظة واستفسار المشتريات #{{ $adminReplyId }}
+            </h3>
+
+            {{-- Item info summary badge --}}
+            <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-radius: 8px; padding: 10px 14px; margin-bottom: 1.25rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+                <div>
+                    <span style="font-size: 0.8rem; color: var(--text-secondary);">الصنف:</span>
+                    <strong style="color: var(--text-primary); margin-right: 4px;">{{ $adminReplyItemName }}</strong>
+                    <span style="font-size: 0.8rem; color: var(--text-secondary); margin-right: 8px;">({{ $adminReplyQuantity }})</span>
+                </div>
+                <div style="font-size: 0.8rem;">
+                    <span style="color: var(--text-secondary);">المطبخ:</span>
+                    <span class="badge" style="background: rgba(212, 175, 55, 0.15); color: var(--primary-color); border: 1px solid rgba(212, 175, 55, 0.3);">
+                        {{ $adminReplyKitchen }}
+                    </span>
+                </div>
+            </div>
+
+            {{-- Employee's Note Display --}}
+            <div style="margin-bottom: 1.25rem;">
+                <label class="form-label" style="font-weight: 700; color: #ffeb3b; display: flex; align-items: center; gap: 6px;">
+                    <i class="fa-solid fa-comment-dots"></i> ملاحظة موظف المشتريات:
+                </label>
+                <div style="background: rgba(255, 235, 59, 0.08); border: 1px solid rgba(255, 235, 59, 0.3); border-radius: 8px; padding: 12px 14px; font-size: 0.95rem; color: #fff; line-height: 1.5; word-break: break-word;">
+                    {{ $adminReplyNotes }}
+                </div>
+            </div>
+
+            {{-- Price entered by employee if any --}}
+            @if($adminReplyPrice)
+            <div style="margin-bottom: 1.25rem; background: rgba(76, 175, 80, 0.1); border: 1px solid rgba(76, 175, 80, 0.3); border-radius: 8px; padding: 8px 12px; display: flex; align-items: center; justify-content: space-between;">
+                <span style="font-size: 0.85rem; color: var(--text-secondary);">السعر المقترح من الموظف:</span>
+                <strong style="color: #4CAF50; font-size: 1rem;">{{ number_format($adminReplyPrice, 2) }} ر.س</strong>
+            </div>
+            @endif
+
+            {{-- Attached Image Preview if any --}}
+            @if($adminReplyInvoiceImage)
+            <div style="margin-bottom: 1.25rem;">
+                <label class="form-label" style="font-weight: 700; font-size: 0.85rem;">
+                    <i class="fa-solid fa-paperclip"></i> المرفق / الصورة من الموظف:
+                </label>
+                <div style="background: rgba(0,0,0,0.3); border: 1px solid var(--border-color); border-radius: 8px; padding: 8px; text-align: center;">
+                    <a href="{{ route('file.serve', ['path' => $adminReplyInvoiceImage]) }}" target="_blank">
+                        <img src="{{ route('file.serve', ['path' => $adminReplyInvoiceImage]) }}" alt="مرفق الموظف" style="max-height: 140px; max-width: 100%; border-radius: 6px; object-fit: contain;">
+                    </a>
+                </div>
+            </div>
+            @endif
+
+            {{-- Admin Reply Form --}}
+            <div class="form-group" style="margin-bottom: 1rem;">
+                <label class="form-label" style="font-weight: 700;">
+                    <i class="fa-solid fa-reply" style="color: #4CAF50;"></i> رد المدير على الموظف <span style="color: var(--danger-color);">*</span>
+                </label>
+
+                {{-- Quick Reply Pills --}}
+                <div style="display: flex; gap: 6px; margin-bottom: 8px; flex-wrap: wrap;">
+                    <button type="button" wire:click="$set('adminReplyText', 'نعم، تمام اشترها')" class="btn btn-sm btn-outline" style="font-size: 0.75rem; padding: 3px 8px; border-radius: 20px;">
+                        👍 نعم، تمام اشترها
+                    </button>
+                    <button type="button" wire:click="$set('adminReplyText', 'موافق على الصنف البديل')" class="btn btn-sm btn-outline" style="font-size: 0.75rem; padding: 3px 8px; border-radius: 20px;">
+                        ✅ موافق على البديل
+                    </button>
+                    <button type="button" wire:click="$set('adminReplyText', 'السعر مناسب، توكل على الله')" class="btn btn-sm btn-outline" style="font-size: 0.75rem; padding: 3px 8px; border-radius: 20px;">
+                        💰 السعر مناسب
+                    </button>
+                    <button type="button" wire:click="$set('adminReplyText', 'لا تشتري، ابحث في مكان آخر')" class="btn btn-sm btn-outline" style="font-size: 0.75rem; padding: 3px 8px; border-radius: 20px; color: #f44336; border-color: rgba(244,67,54,0.3);">
+                        ❌ لا تشتري
+                    </button>
+                </div>
+
+                <textarea class="form-control" wire:model="adminReplyText" rows="3" placeholder="اكتب ردك أو توجيهك لموظف المشتريات هنا..." style="padding: 10px; resize: vertical;" required></textarea>
+                @error('adminReplyText')
+                    <span style="color: var(--danger-color); font-size: 0.8rem; display: block; margin-top: 5px;">{{ $message }}</span>
+                @enderror
+            </div>
+
+            {{-- Actions --}}
+            <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 1.5rem; border-top: 1px solid var(--border-color); padding-top: 15px;">
+                <button type="button" wire:click="closeAdminReplyModal" class="btn btn-outline">إلغاء</button>
+                <button type="button" wire:click="submitAdminReply" class="btn btn-success" style="padding: 10px 25px; font-weight: 700; background: linear-gradient(135deg, #2e7d32, #1b5e20); border: none;">
+                    <i class="fa-solid fa-paper-plane"></i> إرسال الرد للموظف
                 </button>
             </div>
         </div>
