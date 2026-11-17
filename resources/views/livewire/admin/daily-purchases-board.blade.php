@@ -160,7 +160,9 @@
                 <tbody id="purchases-sortable-tbody">
                     @forelse($requests as $request)
                         <tr data-id="{{ $request->id }}" wire:key="dpr-{{ $request->id }}"
-                            @if($isAdmin && $request->status == 'تم الشراء' && !$request->is_admin_confirmed)
+                            @if($isAdmin && $request->status == 'معلق' && !empty($request->notes) && empty($request->admin_reply))
+                                style="background: rgba(255, 152, 0, 0.08); border-right: 4px solid #FF9800;"
+                            @elseif($isAdmin && $request->status == 'تم الشراء' && !$request->is_admin_confirmed)
                                 style="background: rgba(46, 125, 50, 0.08); border-right: 3px solid #4CAF50;"
                             @endif
                         >
@@ -254,7 +256,7 @@
                                                         style="background: linear-gradient(135deg, #FF9800, #F57C00); color: white; border: none; padding: 4px 10px; font-weight: bold; border-radius: 6px; display: inline-flex; align-items: center; gap: 5px; cursor: pointer; box-shadow: 0 2px 6px rgba(255, 152, 0, 0.35); font-size: 0.78rem;" 
                                                         title="ملاحظة من موظف المشتريات - اضغط للرد والموافقة">
                                                     <i class="fa-solid fa-bell"></i>
-                                                    <span>يوجد ملاحظة</span>
+                                                    <span>في ملاحظة</span>
                                                 </button>
                                             </div>
                                         @else

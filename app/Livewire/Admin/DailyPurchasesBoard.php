@@ -298,14 +298,16 @@ class DailyPurchasesBoard extends Component
         $req = DailyPurchaseRequest::find($this->purchaseRequestId);
         if ($req && $req->status === 'معلق') {
             $path = $this->invoiceImage ? $this->invoiceImage->store('daily_purchases_invoices', 'public') : $req->invoice_image;
+            $minOrder = DailyPurchaseRequest::min('sort_order') ?? 0;
             $req->update([
                 'price' => ($this->purchasePrice !== null && $this->purchasePrice !== '') ? $this->purchasePrice : $req->price,
                 'notes' => trim($this->purchaseNotes),
                 'invoice_image' => $path,
                 'admin_reply' => null, // Reset previous reply so manager sees new note
                 'admin_replied_at' => null,
+                'sort_order' => $minOrder - 1, // Put at the very top (first row)
             ]);
-            $this->dispatch('show-toast', message: 'تم إرسال الملاحظة للمدير العام بنجاح وبانتظار رده', type: 'info');
+            $this->dispatch('show-toast', message: 'تم إرسال الملاحظة للمدير العام وتثبيت الطلب في الصف الأول', type: 'info');
         }
 
         $this->closeInvoiceModal();
@@ -525,17 +527,20 @@ class DailyPurchasesBoard extends Component
         // Total purchases sum
         $totalPurchases = (clone $query)->whereNotNull('price')->sum('price');
 
-        // Ordering:
-        // For Admin:
-        // 1. Purchased orders waiting for Admin confirmation are placed in the top rows (الصفوف الأولى)
-        // 2. Pending orders (لم يتم الشراء)
-        // 3. Purchased orders confirmed by Admin are placed at the bottom (تنزل تحت)
+        // Ordering for Admin:
+        // 1. Orders with notes from employee waiting for manager reply -> Top row! (الصف الأول)
+        // 2. Orders with notes from employee that manager replied to -> Still in top rows!
+        // 3. Purchased orders waiting for Admin confirmation
+        // 4. Regular pending orders (لم يتم الشراء)
+        // 5. Purchased orders confirmed by Admin (تنزل تحت في الأسفل)
         if ($this->isAdmin) {
             $query->orderByRaw("
                 CASE 
-                    WHEN status = 'تم الشراء' AND (is_admin_confirmed = 0 OR is_admin_confirmed IS NULL) THEN 1
-                    WHEN status != 'تم الشراء' THEN 2
-                    ELSE 3
+                    WHEN status = 'معلق' AND notes IS NOT NULL AND TRIM(notes) != '' AND (admin_reply IS NULL OR admin_reply = '') THEN 1
+                    WHEN status = 'معلق' AND notes IS NOT NULL AND TRIM(notes) != '' THEN 2
+                    WHEN status = 'تم الشراء' AND (is_admin_confirmed = 0 OR is_admin_confirmed IS NULL) THEN 3
+                    WHEN status != 'تم الشراء' THEN 4
+                    ELSE 5
                 END ASC
             ");
         }
