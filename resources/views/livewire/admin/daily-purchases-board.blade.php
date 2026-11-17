@@ -247,13 +247,13 @@
                                 @else
                                     <span class="badge badge-pending"><i class="fa-regular fa-clock"></i> لم يتم الشراء</span>
 
-                                    {{-- For Admin: Button to view & reply to note if present --}}
+                                    {{-- For Admin: Button to view & reply to note in modal --}}
                                     @if($isAdmin && !empty($request->notes))
                                         @if(empty($request->admin_reply))
                                             <div style="margin-top: 6px;">
                                                 <button type="button" wire:click="openAdminReplyModal({{ $request->id }})" 
                                                         class="btn btn-sm" 
-                                                        style="background: linear-gradient(135deg, #FF9800, #F57C00); color: white; border: none; padding: 4px 10px; font-weight: bold; border-radius: 6px; display: inline-flex; align-items: center; gap: 5px; cursor: pointer; box-shadow: 0 2px 6px rgba(255, 152, 0, 0.35); font-size: 0.78rem;" 
+                                                        style="background: linear-gradient(135deg, #FF9800, #F57C00); color: white; border: none; padding: 5px 12px; font-weight: bold; border-radius: 6px; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; box-shadow: 0 2px 6px rgba(255, 152, 0, 0.35); font-size: 0.82rem;" 
                                                         title="ملاحظة من موظف المشتريات - اضغط للرد والموافقة">
                                                     <i class="fa-solid fa-bell"></i>
                                                     <span>في ملاحظة</span>
@@ -263,34 +263,39 @@
                                             <div style="margin-top: 6px;">
                                                 <button type="button" wire:click="openAdminReplyModal({{ $request->id }})" 
                                                         class="btn btn-sm btn-outline" 
-                                                        style="padding: 3px 8px; font-size: 0.75rem; color: #4CAF50; border-color: rgba(76,175,80,0.3); display: inline-flex; align-items: center; gap: 4px;" 
+                                                        style="padding: 4px 10px; font-size: 0.78rem; color: #4CAF50; border-color: rgba(76,175,80,0.35); display: inline-flex; align-items: center; gap: 5px; font-weight: 600;" 
                                                         title="تم الرد على الملاحظة - اضغط لتعديل الرد">
-                                                    <i class="fa-solid fa-check-circle"></i>
+                                                    <i class="fa-solid fa-circle-check"></i>
                                                     <span>تم الرد على الملاحظة</span>
                                                 </button>
                                             </div>
                                         @endif
                                     @endif
-                                @endif
 
-                                {{-- Employee's Note Display --}}
-                                @if(!empty($request->notes))
-                                    <div style="margin-top: 6px; font-size: 0.8rem; color: #ffeb3b; background: rgba(255, 235, 59, 0.08); border: 1px dashed rgba(255, 235, 59, 0.35); border-radius: 6px; padding: 4px 8px; display: flex; align-items: flex-start; gap: 5px; text-align: right; max-width: 220px; line-height: 1.4; word-break: break-word;" title="ملاحظات الشراء">
-                                        <i class="fa-solid fa-comment-dots" style="margin-top: 3px; font-size: 0.8rem; flex-shrink: 0; color: #ffeb3b;"></i>
-                                        <span>{{ $request->notes }}</span>
-                                    </div>
-                                @endif
-
-                                {{-- Admin's Reply Display (Visible to employee and admin) --}}
-                                @if(!empty($request->admin_reply))
-                                    <div style="margin-top: 5px; font-size: 0.82rem; color: #4CAF50; background: rgba(76, 175, 80, 0.12); border: 1px solid rgba(76, 175, 80, 0.35); border-radius: 6px; padding: 4px 8px; display: flex; align-items: flex-start; gap: 5px; text-align: right; max-width: 220px; font-weight: 700; line-height: 1.4; word-break: break-word;" title="رد المدير العام">
-                                        <i class="fa-solid fa-reply" style="margin-top: 3px; font-size: 0.8rem; flex-shrink: 0;"></i>
-                                        <span>رد المدير: {{ $request->admin_reply }}</span>
-                                    </div>
-                                @elseif(!$isAdmin && !empty($request->notes) && $request->status == 'معلق')
-                                    <div style="margin-top: 4px; font-size: 0.75rem; color: #FF9800; display: flex; align-items: center; gap: 4px;">
-                                        <i class="fa-solid fa-clock"></i> بانتظار رد المدير...
-                                    </div>
+                                    {{-- For Employee: Button to view note & manager reply in modal --}}
+                                    @if(!$isAdmin && !empty($request->notes))
+                                        @if(!empty($request->admin_reply))
+                                            <div style="margin-top: 6px;">
+                                                <button type="button" wire:click="openInvoiceModal({{ $request->id }})" 
+                                                        class="btn btn-sm" 
+                                                        style="background: linear-gradient(135deg, #2e7d32, #1b5e20); color: white; border: none; padding: 5px 12px; font-weight: bold; border-radius: 6px; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; box-shadow: 0 2px 6px rgba(46, 125, 50, 0.35); font-size: 0.82rem;" 
+                                                        title="وصلك رد من المدير العام - اضغط لعرض الرد وتأكيد الشراء">
+                                                    <i class="fa-solid fa-reply"></i>
+                                                    <span>في ملاحظة (رد المدير)</span>
+                                                </button>
+                                            </div>
+                                        @else
+                                            <div style="margin-top: 6px;">
+                                                <button type="button" wire:click="openInvoiceModal({{ $request->id }})" 
+                                                        class="btn btn-sm" 
+                                                        style="background: rgba(255, 152, 0, 0.15); color: #FF9800; border: 1px solid rgba(255, 152, 0, 0.4); padding: 4px 10px; font-weight: 600; border-radius: 6px; display: inline-flex; align-items: center; gap: 5px; cursor: pointer; font-size: 0.8rem;" 
+                                                        title="أرسلت ملاحظة للمدير - اضغط لعرضها">
+                                                    <i class="fa-solid fa-clock"></i>
+                                                    <span>في ملاحظة</span>
+                                                </button>
+                                            </div>
+                                        @endif
+                                    @endif
                                 @endif
                             </td>
 
@@ -420,6 +425,15 @@
                     <span style="color: var(--danger-color); font-size: 0.8rem; display: block; margin-top: 5px;">{{ $message }}</span>
                 @enderror
             </div>
+
+            @if($existingInvoiceImage)
+                <div style="margin-bottom: 1rem; background: rgba(0,0,0,0.25); border: 1px solid var(--border-color); border-radius: 8px; padding: 10px; text-align: center;">
+                    <span style="font-size: 0.8rem; color: var(--text-secondary); display: block; margin-bottom: 6px;">الصورة المرفوعة سابقاً:</span>
+                    <a href="{{ route('file.serve', ['path' => $existingInvoiceImage]) }}" target="_blank">
+                        <img src="{{ route('file.serve', ['path' => $existingInvoiceImage]) }}" alt="المرفق" style="max-height: 120px; max-width: 100%; border-radius: 6px; object-fit: contain;">
+                    </a>
+                </div>
+            @endif
 
             <div class="form-group">
                 <label class="form-label">صورة توضيحية / الفاتورة <span style="color: var(--text-secondary); font-size: 0.85rem;">(اختياري)</span></label>

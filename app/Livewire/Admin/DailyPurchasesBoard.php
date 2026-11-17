@@ -31,6 +31,7 @@ class DailyPurchasesBoard extends Component
     public $purchasePrice = null;
     public $purchaseNotes = '';
     public $existingAdminReply = null;
+    public $existingInvoiceImage = null;
     public $invoiceImage;
 
     // Admin: Confirmation & Review modal
@@ -254,6 +255,7 @@ class DailyPurchasesBoard extends Component
         $this->purchasePrice = null;
         $this->purchaseNotes = '';
         $this->existingAdminReply = null;
+        $this->existingInvoiceImage = null;
         $req = DailyPurchaseRequest::find($id);
         if ($req) {
             if ($req->price !== null) {
@@ -263,6 +265,7 @@ class DailyPurchasesBoard extends Component
                 $this->purchaseNotes = $req->notes;
             }
             $this->existingAdminReply = $req->admin_reply;
+            $this->existingInvoiceImage = $req->invoice_image;
         }
         $this->resetValidation();
         $this->showInvoiceModal = true;
@@ -276,6 +279,7 @@ class DailyPurchasesBoard extends Component
         $this->purchasePrice = null;
         $this->purchaseNotes = '';
         $this->existingAdminReply = null;
+        $this->existingInvoiceImage = null;
         $this->resetValidation();
     }
 
