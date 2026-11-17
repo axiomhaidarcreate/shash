@@ -80,6 +80,12 @@
                 </div>
             </div>
 
+            <!-- Notes -->
+            <div class="form-group" style="margin-bottom: 1rem;">
+                <label class="form-label">ملاحظات <span style="color: var(--text-secondary); font-size: 0.85rem;">(اختياري)</span></label>
+                <input type="text" class="form-control" wire:model="notes" placeholder="أدخل أي ملاحظات حول الطلب...">
+            </div>
+
             <div style="display: flex; justify-content: flex-end; gap: 10px;">
                 @if($isEditing)
                     <button type="button" class="btn btn-outline" wire:click="resetForm">إلغاء التعديل</button>
@@ -224,6 +230,13 @@
                                 @else
                                     <span class="badge badge-pending"><i class="fa-regular fa-clock"></i> لم يتم الشراء</span>
                                 @endif
+
+                                @if(!empty($request->notes))
+                                    <div style="margin-top: 6px; font-size: 0.8rem; color: #ffeb3b; background: rgba(255, 235, 59, 0.08); border: 1px dashed rgba(255, 235, 59, 0.35); border-radius: 6px; padding: 4px 8px; display: flex; align-items: flex-start; gap: 5px; text-align: right; max-width: 220px; line-height: 1.4; word-break: break-word;" title="ملاحظات الشراء">
+                                        <i class="fa-solid fa-comment-dots" style="margin-top: 3px; font-size: 0.8rem; flex-shrink: 0; color: #ffeb3b;"></i>
+                                        <span>{{ $request->notes }}</span>
+                                    </div>
+                                @endif
                             </td>
 
                             {{-- Actions Column --}}
@@ -306,6 +319,14 @@
                 <label class="form-label">سعر الشراء (ر.س) <span style="color: var(--text-secondary); font-size: 0.85rem;">(اختياري)</span></label>
                 <input type="number" step="0.01" min="0" class="form-control" wire:model="purchasePrice" placeholder="أدخل مبلغ الشراء..." style="padding: 10px;">
                 @error('purchasePrice')
+                    <span style="color: var(--danger-color); font-size: 0.8rem; display: block; margin-top: 5px;">{{ $message }}</span>
+                @enderror
+            </div>
+
+            <div class="form-group" style="margin-bottom: 1.25rem;">
+                <label class="form-label"><i class="fa-solid fa-pen-to-square"></i> ملاحظات الشراء <span style="color: var(--text-secondary); font-size: 0.85rem;">(اختياري)</span></label>
+                <textarea class="form-control" wire:model="purchaseNotes" rows="2" placeholder="أدخل أي ملاحظات حول الشراء..." style="padding: 10px; resize: vertical;"></textarea>
+                @error('purchaseNotes')
                     <span style="color: var(--danger-color); font-size: 0.8rem; display: block; margin-top: 5px;">{{ $message }}</span>
                 @enderror
             </div>

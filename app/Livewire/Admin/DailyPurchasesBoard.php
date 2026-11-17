@@ -29,6 +29,7 @@ class DailyPurchasesBoard extends Component
     public $showInvoiceModal = false;
     public $purchaseRequestId = null;
     public $purchasePrice = null;
+    public $purchaseNotes = '';
     public $invoiceImage;
 
     // Form fields
@@ -42,6 +43,7 @@ class DailyPurchasesBoard extends Component
     public $importance = 'عادي';
     public $kitchen_source = 'شيشة';
     public $needed_date;
+    public $notes = '';
     public $attachment;
     public $existing_attachment = null;
 
@@ -78,7 +80,7 @@ class DailyPurchasesBoard extends Component
 
     public function resetForm()
     {
-        $this->reset(['item_name', 'quantity', 'weight_or_ml', 'importance', 'kitchen_source', 'attachment', 'isEditing', 'editId', 'existing_attachment', 'showForm']);
+        $this->reset(['item_name', 'quantity', 'weight_or_ml', 'importance', 'kitchen_source', 'notes', 'attachment', 'isEditing', 'editId', 'existing_attachment', 'showForm']);
         $this->needed_date = Carbon::today()->format('Y-m-d');
     }
 
@@ -98,6 +100,7 @@ class DailyPurchasesBoard extends Component
             'importance' => $this->importance,
             'kitchen_source' => $this->kitchen_source,
             'needed_date' => $this->needed_date,
+            'notes' => $this->notes ? trim($this->notes) : null,
             'attachment_path' => $path,
             'status' => 'معلق',
         ];
@@ -127,6 +130,7 @@ class DailyPurchasesBoard extends Component
             $this->importance = $req->importance;
             $this->kitchen_source = $req->kitchen_source;
             $this->needed_date = Carbon::parse($req->needed_date)->format('Y-m-d');
+            $this->notes = $req->notes ?? '';
             $this->existing_attachment = $req->attachment_path;
             
             $this->isEditing = true;
@@ -225,9 +229,15 @@ class DailyPurchasesBoard extends Component
         $this->purchaseRequestId = $id;
         $this->invoiceImage = null;
         $this->purchasePrice = null;
+        $this->purchaseNotes = '';
         $req = DailyPurchaseRequest::find($id);
-        if ($req && $req->price !== null) {
-            $this->purchasePrice = $req->price;
+        if ($req) {
+            if ($req->price !== null) {
+                $this->purchasePrice = $req->price;
+            }
+            if ($req->notes !== null) {
+                $this->purchaseNotes = $req->notes;
+            }
         }
         $this->resetValidation();
         $this->showInvoiceModal = true;
@@ -239,18 +249,21 @@ class DailyPurchasesBoard extends Component
         $this->purchaseRequestId = null;
         $this->invoiceImage = null;
         $this->purchasePrice = null;
+        $this->purchaseNotes = '';
         $this->resetValidation();
     }
 
-    // Employee: confirm purchase with invoice image & price
+    // Employee: confirm purchase with invoice image, price & notes
     public function confirmPurchase()
     {
         $this->validate([
             'purchasePrice' => 'nullable|numeric|min:0',
+            'purchaseNotes' => 'nullable|string|max:1000',
             'invoiceImage' => 'nullable|image|max:5120',
         ], [
             'purchasePrice.numeric' => 'يجب أن يكون السعر قيمة عددية.',
             'purchasePrice.min' => 'يجب ألا يقل السعر عن 0.',
+            'purchaseNotes.max' => 'يجب ألا تتجاوز الملاحظات 1000 حرف.',
             'invoiceImage.image' => 'يجب أن يكون المرفق صورة.',
             'invoiceImage.max' => 'حجم الصورة لا يجب أن يتجاوز 5 ميجابايت.',
         ]);
@@ -261,6 +274,7 @@ class DailyPurchasesBoard extends Component
             $req->update([
                 'status' => 'تم الشراء',
                 'price' => ($this->purchasePrice !== null && $this->purchasePrice !== '') ? $this->purchasePrice : null,
+                'notes' => $this->purchaseNotes ? trim($this->purchaseNotes) : null,
                 'invoice_image' => $path,
             ]);
             $this->dispatch('show-toast', message: 'تم تأكيد الشراء بنجاح', type: 'success');

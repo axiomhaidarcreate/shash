@@ -96,6 +96,11 @@
                     @else
                         لم يتم الشراء
                     @endif
+                    @if(!empty($request->notes))
+                        <div style="font-size: 11px; font-weight: normal; color: #555; margin-top: 4px; line-height: 1.3;">
+                            ملاحظة: {{ $request->notes }}
+                        </div>
+                    @endif
                 </td>
             </tr>
             @empty

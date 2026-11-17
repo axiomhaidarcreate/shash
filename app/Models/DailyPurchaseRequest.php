@@ -21,6 +21,7 @@ class DailyPurchaseRequest extends Model
         'requested_by',
         'invoice_image',
         'price',
+        'notes',
         'sort_order',
     ];
 
