@@ -159,7 +159,11 @@
                 </thead>
                 <tbody id="purchases-sortable-tbody">
                     @forelse($requests as $request)
-                        <tr data-id="{{ $request->id }}" wire:key="dpr-{{ $request->id }}">
+                        <tr data-id="{{ $request->id }}" wire:key="dpr-{{ $request->id }}"
+                            @if($isAdmin && $request->status == 'تم الشراء' && !$request->is_admin_confirmed)
+                                style="background: rgba(46, 125, 50, 0.08); border-right: 3px solid #4CAF50;"
+                            @endif
+                        >
                             <td class="no-print" style="text-align: center; vertical-align: middle;">
                                 <div style="display: flex; align-items: center; justify-content: center; gap: 6px;">
                                     <span class="drag-handle" style="cursor: grab; color: var(--text-secondary); padding: 4px;" title="اسحب لتغيير ترتيب الطلب">
@@ -227,6 +231,17 @@
                             <td>
                                 @if($request->status == 'تم الشراء')
                                     <span class="badge badge-ready"><i class="fa-solid fa-check-double"></i> تم الشراء</span>
+                                    @if($isAdmin)
+                                        @if($request->is_admin_confirmed)
+                                            <div style="margin-top: 4px; font-size: 0.75rem; color: #4CAF50; font-weight: bold; display: flex; align-items: center; gap: 4px;">
+                                                <i class="fa-solid fa-circle-check"></i> مؤكد من الإدارة
+                                            </div>
+                                        @else
+                                            <div style="margin-top: 4px; font-size: 0.75rem; color: #FF9800; font-weight: bold; display: flex; align-items: center; gap: 4px;">
+                                                <i class="fa-solid fa-clock"></i> بانتظار تأكيد الإدارة
+                                            </div>
+                                        @endif
+                                    @endif
                                 @else
                                     <span class="badge badge-pending"><i class="fa-regular fa-clock"></i> لم يتم الشراء</span>
                                 @endif
@@ -242,8 +257,27 @@
                             {{-- Actions Column --}}
                             <td class="no-print">
                                 @if($isAdmin)
-                                    {{-- Admin: Edit + Delete --}}
-                                    <div style="display: flex; gap: 6px;">
+                                    {{-- Admin: Confirm/Unconfirm + Edit + Delete --}}
+                                    <div style="display: flex; gap: 6px; align-items: center;">
+                                        @if($request->status == 'تم الشراء')
+                                            @if(!$request->is_admin_confirmed)
+                                                <button wire:click="confirmAdmin({{ $request->id }})" 
+                                                        class="btn btn-sm btn-success" 
+                                                        style="background: linear-gradient(135deg, #2e7d32, #1b5e20); color: white; border: none; padding: 5px 12px; font-weight: 700; white-space: nowrap; display: inline-flex; align-items: center; gap: 5px;" 
+                                                        title="تأكيد الشراء واعتماده وتنزيل الطلب للأسفل">
+                                                    <i class="fa-solid fa-circle-check"></i>
+                                                    <span>تم التأكيد</span>
+                                                </button>
+                                            @else
+                                                <button wire:click="unconfirmAdmin({{ $request->id }})" 
+                                                        class="btn btn-sm btn-outline" 
+                                                        style="color: var(--text-secondary); padding: 4px 8px; font-size: 0.75rem; white-space: nowrap;" 
+                                                        title="إلغاء التأكيد وإعادة الطلب للأعلى">
+                                                    <i class="fa-solid fa-rotate-left"></i> إلغاء التأكيد
+                                                </button>
+                                            @endif
+                                        @endif
+
                                         <button wire:click="edit({{ $request->id }})" class="btn btn-sm btn-outline" title="تعديل">
                                             <i class="fa-solid fa-pen"></i>
                                         </button>

@@ -276,11 +276,47 @@ class DailyPurchasesBoard extends Component
                 'price' => ($this->purchasePrice !== null && $this->purchasePrice !== '') ? $this->purchasePrice : null,
                 'notes' => $this->purchaseNotes ? trim($this->purchaseNotes) : null,
                 'invoice_image' => $path,
+                'is_admin_confirmed' => false,
+                'admin_confirmed_at' => null,
             ]);
             $this->dispatch('show-toast', message: 'تم تأكيد الشراء بنجاح', type: 'success');
         }
 
         $this->closeInvoiceModal();
+    }
+
+    // Admin: Confirm purchased request and move it down
+    public function confirmAdmin($id)
+    {
+        if (!$this->isAdmin) return;
+
+        $req = DailyPurchaseRequest::find($id);
+        if ($req) {
+            $maxSort = DailyPurchaseRequest::max('sort_order') ?? 0;
+            $req->update([
+                'is_admin_confirmed' => true,
+                'admin_confirmed_at' => now(),
+                'sort_order' => $maxSort + 1,
+            ]);
+            $this->dispatch('show-toast', message: 'تم تأكيد واعتماد الطلب بنجاح ونقله للأسفل', type: 'success');
+        }
+    }
+
+    // Admin: Unconfirm purchased request and move it back to top
+    public function unconfirmAdmin($id)
+    {
+        if (!$this->isAdmin) return;
+
+        $req = DailyPurchaseRequest::find($id);
+        if ($req) {
+            $minSort = DailyPurchaseRequest::min('sort_order') ?? 0;
+            $req->update([
+                'is_admin_confirmed' => false,
+                'admin_confirmed_at' => null,
+                'sort_order' => $minSort - 1,
+            ]);
+            $this->dispatch('show-toast', message: 'تم إلغاء تأكيد الطلب وإعادته للأعلى', type: 'info');
+        }
     }
 
     public function render()
@@ -317,7 +353,21 @@ class DailyPurchasesBoard extends Component
         // Total purchases sum
         $totalPurchases = (clone $query)->whereNotNull('price')->sum('price');
 
-        // Order by manual sort_order ascending, then newest
+        // Ordering:
+        // For Admin:
+        // 1. Purchased orders waiting for Admin confirmation are placed in the top rows (الصفوف الأولى)
+        // 2. Pending orders (لم يتم الشراء)
+        // 3. Purchased orders confirmed by Admin are placed at the bottom (تنزل تحت)
+        if ($this->isAdmin) {
+            $query->orderByRaw("
+                CASE 
+                    WHEN status = 'تم الشراء' AND (is_admin_confirmed = 0 OR is_admin_confirmed IS NULL) THEN 1
+                    WHEN status != 'تم الشراء' THEN 2
+                    ELSE 3
+                END ASC
+            ");
+        }
+
         $requests = $query->orderBy('sort_order', 'asc')->orderBy('id', 'desc')->paginate(30);
 
         return view('livewire.admin.daily-purchases-board', [
