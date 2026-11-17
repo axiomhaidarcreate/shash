@@ -261,14 +261,20 @@
                                     <div style="display: flex; gap: 6px; align-items: center;">
                                         @if($request->status == 'تم الشراء')
                                             @if(!$request->is_admin_confirmed)
-                                                <button wire:click="confirmAdmin({{ $request->id }})" 
+                                                <button wire:click="openAdminConfirmModal({{ $request->id }})" 
                                                         class="btn btn-sm btn-success" 
                                                         style="background: linear-gradient(135deg, #2e7d32, #1b5e20); color: white; border: none; padding: 5px 12px; font-weight: 700; white-space: nowrap; display: inline-flex; align-items: center; gap: 5px;" 
-                                                        title="تأكيد الشراء واعتماده وتنزيل الطلب للأسفل">
+                                                        title="مراجعة وتأكيد الشراء واعتماده">
                                                     <i class="fa-solid fa-circle-check"></i>
                                                     <span>تم التأكيد</span>
                                                 </button>
                                             @else
+                                                <button wire:click="openAdminConfirmModal({{ $request->id }})" 
+                                                        class="btn btn-sm btn-outline" 
+                                                        style="color: #4CAF50; border-color: rgba(76,175,80,0.3); padding: 4px 8px; font-size: 0.75rem; white-space: nowrap;" 
+                                                        title="مراجعة وتعديل بيانات الاعتماد">
+                                                    <i class="fa-solid fa-pen-to-square"></i> مراجعة
+                                                </button>
                                                 <button wire:click="unconfirmAdmin({{ $request->id }})" 
                                                         class="btn btn-sm btn-outline" 
                                                         style="color: var(--text-secondary); padding: 4px 8px; font-size: 0.75rem; white-space: nowrap;" 
@@ -380,6 +386,103 @@
                 <button wire:click="closeInvoiceModal" class="btn btn-outline">إلغاء</button>
                 <button wire:click="confirmPurchase" class="btn btn-success" style="padding: 10px 25px;">
                     <i class="fa-solid fa-check-double"></i> تأكيد الشراء
+                </button>
+            </div>
+        </div>
+    </div>
+    @endif
+
+    {{-- Admin Only: Confirmation & Review Modal --}}
+    @if($isAdmin && $showAdminConfirmModal)
+    <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 1000; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px); padding: 15px; overflow-y: auto;">
+        <div class="card" style="width: 520px; max-width: 95%; max-height: 90vh; overflow-y: auto; position: relative; border-top: 4px solid #4CAF50;">
+            <button wire:click="closeAdminConfirmModal" class="btn btn-outline" style="position: absolute; top: 15px; left: 15px; padding: 5px 10px;">
+                <i class="fa-solid fa-times"></i> إغلاق
+            </button>
+            <h3 style="margin-bottom: 0.5rem; color: #4CAF50; padding-bottom: 5px; display: flex; align-items: center; gap: 8px;">
+                <i class="fa-solid fa-clipboard-check"></i> تأكيد واعتماد الشراء #{{ $adminConfirmId }}
+            </h3>
+
+            {{-- Item info summary badge --}}
+            <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-radius: 8px; padding: 10px 14px; margin-bottom: 1.25rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+                <div>
+                    <span style="font-size: 0.8rem; color: var(--text-secondary);">الصنف:</span>
+                    <strong style="color: var(--text-primary); margin-right: 4px;">{{ $adminConfirmItemName }}</strong>
+                    <span style="font-size: 0.8rem; color: var(--text-secondary); margin-right: 8px;">({{ $adminConfirmQuantity }})</span>
+                </div>
+                <div style="font-size: 0.8rem;">
+                    <span style="color: var(--text-secondary);">المطبخ:</span>
+                    <span class="badge" style="background: rgba(212, 175, 55, 0.15); color: var(--primary-color); border: 1px solid rgba(212, 175, 55, 0.3);">
+                        {{ $adminConfirmKitchen }}
+                    </span>
+                </div>
+            </div>
+
+            {{-- Price Field --}}
+            <div class="form-group" style="margin-bottom: 1.25rem;">
+                <label class="form-label" style="font-weight: 700;">
+                    <i class="fa-solid fa-coins" style="color: #4CAF50;"></i> سعر الشراء (ر.س)
+                    <span style="color: var(--text-secondary); font-size: 0.8rem; font-weight: normal;">(يمكنك التعديل عليه)</span>
+                </label>
+                <input type="number" step="0.01" min="0" class="form-control" wire:model="adminConfirmPrice" placeholder="أدخل مبلغ الشراء..." style="padding: 10px; font-size: 1.05rem; font-weight: bold; color: var(--success-color);">
+                @error('adminConfirmPrice')
+                    <span style="color: var(--danger-color); font-size: 0.8rem; display: block; margin-top: 5px;">{{ $message }}</span>
+                @enderror
+            </div>
+
+            {{-- Notes Field --}}
+            <div class="form-group" style="margin-bottom: 1.25rem;">
+                <label class="form-label" style="font-weight: 700;">
+                    <i class="fa-solid fa-comment-dots" style="color: #FF9800;"></i> ملاحظات الشراء
+                    <span style="color: var(--text-secondary); font-size: 0.8rem; font-weight: normal;">(يمكنك التعديل عليها)</span>
+                </label>
+                <textarea class="form-control" wire:model="adminConfirmNotes" rows="3" placeholder="أدخل أي ملاحظات حول الشراء..." style="padding: 10px; resize: vertical;"></textarea>
+                @error('adminConfirmNotes')
+                    <span style="color: var(--danger-color); font-size: 0.8rem; display: block; margin-top: 5px;">{{ $message }}</span>
+                @enderror
+            </div>
+
+            {{-- Attached Invoice Preview --}}
+            <div class="form-group" style="margin-bottom: 1.25rem;">
+                <label class="form-label" style="font-weight: 700;">
+                    <i class="fa-solid fa-file-invoice" style="color: var(--info-color);"></i> صورة الفاتورة المرفقة من الموظف
+                </label>
+
+                @if($adminConfirmInvoiceImage)
+                    <div style="background: rgba(0,0,0,0.3); border: 1px solid var(--border-color); border-radius: 8px; padding: 10px; text-align: center; margin-bottom: 10px;">
+                        <a href="{{ route('file.serve', ['path' => $adminConfirmInvoiceImage]) }}" target="_blank">
+                            <img src="{{ route('file.serve', ['path' => $adminConfirmInvoiceImage]) }}" alt="فاتورة الشراء" style="max-height: 180px; max-width: 100%; border-radius: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.4); object-fit: contain;">
+                        </a>
+                        <div style="margin-top: 8px;">
+                            <a href="{{ route('file.serve', ['path' => $adminConfirmInvoiceImage]) }}" target="_blank" class="btn btn-sm btn-outline" style="font-size: 0.8rem;">
+                                <i class="fa-solid fa-up-right-from-square"></i> عرض الفاتورة بالحجم الكامل
+                            </a>
+                        </div>
+                    </div>
+                @else
+                    <div style="background: rgba(255,255,255,0.02); border: 1px dashed var(--border-color); border-radius: 8px; padding: 12px; text-align: center; color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 10px;">
+                        <i class="fa-solid fa-circle-info"></i> لم يقم الموظف بإرفاق صورة فاتورة
+                    </div>
+                @endif
+
+                {{-- Option to change/upload invoice --}}
+                <label style="font-size: 0.82rem; color: var(--text-secondary); display: block; margin-bottom: 5px;">
+                    {{ $adminConfirmInvoiceImage ? 'تغيير صورة الفاتورة (اختياري)' : 'إرفاق صورة فاتورة (اختياري)' }}
+                </label>
+                <input type="file" class="form-control" wire:model="newInvoiceImage" accept="image/*" style="padding: 10px;">
+                <div wire:loading wire:target="newInvoiceImage" style="font-size: 0.85rem; color: var(--warning-color); margin-top: 6px;">
+                    <i class="fa-solid fa-spinner fa-spin"></i> جاري رفع الصورة...
+                </div>
+                @error('newInvoiceImage')
+                    <span style="color: var(--danger-color); font-size: 0.8rem; display: block; margin-top: 5px;">{{ $message }}</span>
+                @enderror
+            </div>
+
+            {{-- Actions --}}
+            <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 1.5rem; border-top: 1px solid var(--border-color); padding-top: 15px;">
+                <button wire:click="closeAdminConfirmModal" class="btn btn-outline">إلغاء</button>
+                <button wire:click="saveAdminConfirmation" class="btn btn-success" style="padding: 10px 25px; font-weight: 700; background: linear-gradient(135deg, #2e7d32, #1b5e20); border: none;">
+                    <i class="fa-solid fa-circle-check"></i> تأكيد واعتماد الطلب
                 </button>
             </div>
         </div>

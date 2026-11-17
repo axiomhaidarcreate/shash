@@ -32,6 +32,17 @@ class DailyPurchasesBoard extends Component
     public $purchaseNotes = '';
     public $invoiceImage;
 
+    // Admin: Confirmation & Review modal
+    public $showAdminConfirmModal = false;
+    public $adminConfirmId = null;
+    public $adminConfirmItemName = '';
+    public $adminConfirmKitchen = '';
+    public $adminConfirmQuantity = '';
+    public $adminConfirmPrice = null;
+    public $adminConfirmNotes = '';
+    public $adminConfirmInvoiceImage = null;
+    public $newInvoiceImage;
+
     // Form fields
     public $showForm = false;
     public $isEditing = false;
@@ -285,21 +296,78 @@ class DailyPurchasesBoard extends Component
         $this->closeInvoiceModal();
     }
 
-    // Admin: Confirm purchased request and move it down
-    public function confirmAdmin($id)
+    // Admin: Open confirmation modal to review/edit price, notes & invoice image
+    public function openAdminConfirmModal($id)
     {
         if (!$this->isAdmin) return;
 
         $req = DailyPurchaseRequest::find($id);
+        if (!$req) return;
+
+        $this->adminConfirmId = $req->id;
+        $this->adminConfirmItemName = $req->item_name;
+        $this->adminConfirmKitchen = $req->kitchen_source;
+        $this->adminConfirmQuantity = $req->quantity . ($req->weight_or_ml ? ' (' . $req->weight_or_ml . ')' : '');
+        $this->adminConfirmPrice = $req->price;
+        $this->adminConfirmNotes = $req->notes ?? '';
+        $this->adminConfirmInvoiceImage = $req->invoice_image;
+        $this->newInvoiceImage = null;
+        $this->resetValidation();
+        $this->showAdminConfirmModal = true;
+    }
+
+    public function closeAdminConfirmModal()
+    {
+        $this->showAdminConfirmModal = false;
+        $this->adminConfirmId = null;
+        $this->adminConfirmItemName = '';
+        $this->adminConfirmKitchen = '';
+        $this->adminConfirmQuantity = '';
+        $this->adminConfirmPrice = null;
+        $this->adminConfirmNotes = '';
+        $this->adminConfirmInvoiceImage = null;
+        $this->newInvoiceImage = null;
+        $this->resetValidation();
+    }
+
+    // Admin: Save review edits, confirm request, and move it down
+    public function saveAdminConfirmation()
+    {
+        if (!$this->isAdmin || !$this->adminConfirmId) return;
+
+        $this->validate([
+            'adminConfirmPrice' => 'nullable|numeric|min:0',
+            'adminConfirmNotes' => 'nullable|string|max:1000',
+            'newInvoiceImage' => 'nullable|image|max:5120',
+        ], [
+            'adminConfirmPrice.numeric' => 'يجب أن يكون السعر قيمة عددية.',
+            'adminConfirmPrice.min' => 'يجب ألا يقل السعر عن 0.',
+            'adminConfirmNotes.max' => 'يجب ألا تتجاوز الملاحظات 1000 حرف.',
+            'newInvoiceImage.image' => 'يجب أن يكون المرفق صورة.',
+            'newInvoiceImage.max' => 'حجم الصورة لا يجب أن يتجاوز 5 ميجابايت.',
+        ]);
+
+        $req = DailyPurchaseRequest::find($this->adminConfirmId);
         if ($req) {
+            $invoicePath = $req->invoice_image;
+            if ($this->newInvoiceImage) {
+                $invoicePath = $this->newInvoiceImage->store('daily_purchases_invoices', 'public');
+            }
+
             $maxSort = DailyPurchaseRequest::max('sort_order') ?? 0;
             $req->update([
+                'price' => ($this->adminConfirmPrice !== null && $this->adminConfirmPrice !== '') ? $this->adminConfirmPrice : null,
+                'notes' => $this->adminConfirmNotes ? trim($this->adminConfirmNotes) : null,
+                'invoice_image' => $invoicePath,
                 'is_admin_confirmed' => true,
                 'admin_confirmed_at' => now(),
                 'sort_order' => $maxSort + 1,
             ]);
+
             $this->dispatch('show-toast', message: 'تم تأكيد واعتماد الطلب بنجاح ونقله للأسفل', type: 'success');
         }
+
+        $this->closeAdminConfirmModal();
     }
 
     // Admin: Unconfirm purchased request and move it back to top
