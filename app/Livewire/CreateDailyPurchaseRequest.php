@@ -28,9 +28,9 @@ class CreateDailyPurchaseRequest extends Component
         'quantity' => 'required|integer|min:1',
         'weightOrMl' => 'nullable|string|max:255',
         'importance' => 'required|in:عاجل,متوسط,عادي',
-        'attachment' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:5120',
+        'attachment' => 'nullable|file|mimes:jpg,jpeg,png,webp,pdf,heic|max:10240',
         'neededDate' => 'required|date',
-        'kitchenSource' => 'required|in:شيشة,باريستا,مطعم,استقبال,تحايا',
+        'kitchenSource' => 'required|string|max:255',
     ];
 
     public function mount($kitchenSource)
