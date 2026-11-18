@@ -335,6 +335,7 @@ class DailyPurchasesBoard extends Component
         $req = DailyPurchaseRequest::find($this->purchaseRequestId);
         if ($req && $req->status === 'معلق') {
             $path = $this->invoiceImage ? $this->invoiceImage->store('daily_purchases_invoices', 'public') : $req->invoice_image;
+            $maxSort = DailyPurchaseRequest::max('sort_order') ?? 0;
             $req->update([
                 'status' => 'تم الشراء',
                 'price' => ($this->purchasePrice !== null && $this->purchasePrice !== '') ? $this->purchasePrice : null,
@@ -342,8 +343,9 @@ class DailyPurchasesBoard extends Component
                 'invoice_image' => $path,
                 'is_admin_confirmed' => false,
                 'admin_confirmed_at' => null,
+                'sort_order' => $maxSort + 1,
             ]);
-            $this->dispatch('show-toast', message: 'تم تأكيد الشراء بنجاح', type: 'success');
+            $this->dispatch('show-toast', message: 'تم تأكيد الشراء بنجاح ونقله للأسفل', type: 'success');
         }
 
         $this->closeInvoiceModal();
@@ -531,20 +533,28 @@ class DailyPurchasesBoard extends Component
         // Total purchases sum
         $totalPurchases = (clone $query)->whereNotNull('price')->sum('price');
 
-        // Ordering for Admin:
+        // Ordering:
+        // For Admin:
         // 1. Orders with notes from employee waiting for manager reply -> Top row! (الصف الأول)
-        // 2. Orders with notes from employee that manager replied to -> Still in top rows!
-        // 3. Purchased orders waiting for Admin confirmation
-        // 4. Regular pending orders (لم يتم الشراء)
-        // 5. Purchased orders confirmed by Admin (تنزل تحت في الأسفل)
+        // 2. Orders with notes from employee that manager replied to -> Top rows of unpurchased
+        // 3. Regular unpurchased orders (لم يتم الشراء) -> On top! (تكون فوق)
+        // 4. Purchased orders waiting for Admin confirmation -> Down at bottom (تروح تحت عادي حتى لو لم يتم التأكيد بعد)
+        // 5. Purchased orders confirmed by Admin -> Down at bottom
         if ($this->isAdmin) {
             $query->orderByRaw("
                 CASE 
                     WHEN status = 'معلق' AND notes IS NOT NULL AND TRIM(notes) != '' AND (admin_reply IS NULL OR admin_reply = '') THEN 1
                     WHEN status = 'معلق' AND notes IS NOT NULL AND TRIM(notes) != '' THEN 2
-                    WHEN status = 'تم الشراء' AND (is_admin_confirmed = 0 OR is_admin_confirmed IS NULL) THEN 3
-                    WHEN status != 'تم الشراء' THEN 4
+                    WHEN status != 'تم الشراء' THEN 3
+                    WHEN status = 'تم الشراء' AND (is_admin_confirmed = 0 OR is_admin_confirmed IS NULL) THEN 4
                     ELSE 5
+                END ASC
+            ");
+        } else {
+            $query->orderByRaw("
+                CASE 
+                    WHEN status != 'تم الشراء' THEN 1
+                    ELSE 2
                 END ASC
             ");
         }
