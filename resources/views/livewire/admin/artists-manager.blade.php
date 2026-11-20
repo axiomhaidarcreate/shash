@@ -43,6 +43,33 @@
             cursor: pointer;
         }
 
+        /* Filter Pills Buttons */
+        .btn-filter {
+            border: 1px solid rgba(255,255,255,0.1);
+            background: rgba(255,255,255,0.02);
+            color: var(--text-secondary);
+            border-radius: 20px;
+            padding: 0.4rem 1rem;
+            font-size: 0.85rem;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            text-decoration: none;
+            white-space: nowrap;
+        }
+        .btn-filter:hover {
+            background: rgba(76,175,80,0.1);
+            color: #4CAF50;
+            border-color: rgba(76,175,80,0.3);
+        }
+        .btn-filter.active {
+            background: linear-gradient(135deg, #4CAF50, #2E7D32);
+            color: white;
+            border-color: transparent;
+            box-shadow: 0 4px 10px rgba(76,175,80,0.3);
+        }
+
         /* ===== Responsive Mobile Styles ===== */
         @media (max-width: 768px) {
             /* الشاشة الرئيسية: المربعات الأربعة → عمودين */
@@ -446,7 +473,26 @@
 
     <!-- فلاتر -->
     <div class="card mb-4 d-print-none" style="border: 1px solid rgba(0, 188, 212, 0.2);">
-        <h6 class="fw-bold mb-3" style="color: #00BCD4;"><i class="fa-solid fa-filter me-2"></i> فلاتر البحث</h6>
+        <div class="d-flex justify-content-between align-items-center mb-3 filter-header-flex" style="flex-wrap: wrap; gap: 10px;">
+            <h6 class="fw-bold m-0" style="color: #00BCD4;"><i class="fa-solid fa-filter me-2"></i> فلاتر البحث</h6>
+            <div class="d-flex gap-2 quick-filters" style="overflow-x: auto; max-width: 100%; padding-bottom: 4px;">
+                <button wire:click="resetAccountsFilters" class="btn-filter {{ $accounts_filter_status === '' && $accounts_date_from === '' && $accounts_date_to === '' && $accounts_selected_artist_id === '' && $accounts_selected_event_id === '' ? 'active' : '' }}">
+                    <i class="fa-solid fa-border-all me-1"></i> الكل
+                </button>
+                <button wire:click="accountsFilterToday" class="btn-filter {{ $accounts_date_from === now()->toDateString() && $accounts_date_to === now()->toDateString() && $accounts_filter_status === '' ? 'active' : '' }}">
+                    <i class="fa-solid fa-calendar-day me-1"></i> اليوم
+                </button>
+                <button wire:click="accountsFilterThisMonth" class="btn-filter {{ $accounts_date_from === now()->startOfMonth()->toDateString() && $accounts_date_to === now()->endOfMonth()->toDateString() && $accounts_filter_status === '' ? 'active' : '' }}">
+                    <i class="fa-solid fa-calendar-week me-1"></i> حفلات الشهر
+                </button>
+                <button wire:click="setAccountsStatus('approved')" class="btn-filter {{ $accounts_filter_status === 'approved' ? 'active' : '' }}">
+                    <i class="fa-solid fa-check-circle me-1"></i> المعتمد
+                </button>
+                <button wire:click="setAccountsStatus('completed')" class="btn-filter {{ $accounts_filter_status === 'completed' ? 'active' : '' }}">
+                    <i class="fa-solid fa-flag-checkered me-1"></i> المكتمل
+                </button>
+            </div>
+        </div>
         <div class="row align-items-end" style="gap: 0;">
             <div class="col-md-3 mb-3">
                 <label class="form-label fw-bold" style="font-size:0.8rem;">من تاريخ</label>

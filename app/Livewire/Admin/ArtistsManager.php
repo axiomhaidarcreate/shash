@@ -92,6 +92,7 @@ class ArtistsManager extends Component
     public $accounts_date_to = '';
     public $accounts_selected_artist_id = '';
     public $accounts_selected_event_id = '';
+    public $accounts_filter_status = '';
 
     // Income editing
     public $editingIncomeEventId = null;
@@ -777,6 +778,35 @@ class ArtistsManager extends Component
         $this->filter_booking_musician_id = '';
     }
 
+    public function resetAccountsFilters() {
+        $this->accounts_date_from = '';
+        $this->accounts_date_to = '';
+        $this->accounts_selected_artist_id = '';
+        $this->accounts_selected_event_id = '';
+        $this->accounts_filter_status = '';
+    }
+
+    public function accountsFilterToday() {
+        $today = now()->toDateString();
+        $this->accounts_date_from = $today;
+        $this->accounts_date_to = $today;
+        $this->accounts_filter_status = '';
+        $this->accounts_selected_artist_id = '';
+        $this->accounts_selected_event_id = '';
+    }
+
+    public function accountsFilterThisMonth() {
+        $this->accounts_date_from = now()->startOfMonth()->toDateString();
+        $this->accounts_date_to = now()->endOfMonth()->toDateString();
+        $this->accounts_filter_status = '';
+        $this->accounts_selected_artist_id = '';
+        $this->accounts_selected_event_id = '';
+    }
+
+    public function setAccountsStatus($status) {
+        $this->accounts_filter_status = ($this->accounts_filter_status === $status) ? '' : $status;
+    }
+
     public function render()
     {
         $eventsQuery = Event::with(['artistBookings.artist', 'artistBookings.musician']);
@@ -875,6 +905,18 @@ class ArtistsManager extends Component
                 $eventsQuery->whereIn('id', $eventIds);
             }
 
+            // Filter by Status for Accounts
+            if ($this->accounts_filter_status === 'completed') {
+                $eventsQuery->where('is_ended', true);
+            } elseif ($this->accounts_filter_status === 'approved') {
+                $eventsQuery->where(function($q) {
+                    $q->where('is_ended', false)
+                      ->orWhereNull('is_ended');
+                })->whereDoesntHave('artistBookings', function($q) {
+                    $q->where('status', 'suggested');
+                });
+            }
+
             $accountEvents = $eventsQuery->get();
 
             // Calculate stats for each event
@@ -923,6 +965,12 @@ class ArtistsManager extends Component
             }
             if ($this->accounts_selected_artist_id) {
                 $artistsQuery->where('artist_id', $this->accounts_selected_artist_id);
+            }
+            if ($this->accounts_selected_event_id) {
+                $artistsQuery->where('event_id', $this->accounts_selected_event_id);
+            }
+            if ($this->accounts_filter_status) {
+                $artistsQuery->whereIn('event_id', $accountEvents->pluck('id'));
             }
 
             $allArtistBookings = $artistsQuery->get();
