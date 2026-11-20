@@ -62,8 +62,13 @@
                     <input type="text" name="full_name" value="{{ $employee->full_name }}" required class="w-full border border-slate-200 rounded-xl px-4 py-2 focus:border-primary focus:ring-primary/20 text-left" dir="ltr">
                 </div>
                 <div>
-                    <label class="form-label">القسم</label>
-                    <select name="department_id" class="form-control">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
+                        <label class="form-label" style="margin-bottom: 0;">القسم</label>
+                        <button type="button" onclick="openQuickDeptModal()" style="background: none; border: none; color: var(--primary-color); font-size: 0.8rem; font-weight: bold; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">
+                            <i class="fa-solid fa-plus-circle"></i> إضافة قسم
+                        </button>
+                    </div>
+                    <select name="department_id" id="department_select" class="form-control">
                         <option value="">— غير محدد —</option>
                         @foreach($departments as $dept)
                             <option value="{{ $dept->id }}" {{ $employee->department_id == $dept->id ? 'selected' : '' }}>{{ $dept->name_ar }}</option>
@@ -414,7 +419,89 @@
                 });
             }
         });
+
+        function openQuickDeptModal() {
+            document.getElementById('quick_dept_name_ar').value = '';
+            document.getElementById('quick_dept_name').value = '';
+            document.getElementById('quick_dept_error').style.display = 'none';
+            document.getElementById('quickDeptModal').style.display = 'flex';
+        }
+        function closeQuickDeptModal() {
+            document.getElementById('quickDeptModal').style.display = 'none';
+        }
+        function submitQuickDept() {
+            const nameAr = document.getElementById('quick_dept_name_ar').value.trim();
+            const name = document.getElementById('quick_dept_name').value.trim();
+            const errorEl = document.getElementById('quick_dept_error');
+            const btn = document.getElementById('saveQuickDeptBtn');
+
+            if (!nameAr) {
+                errorEl.textContent = 'يرجى إدخال اسم القسم بالعربي';
+                errorEl.style.display = 'block';
+                return;
+            }
+            errorEl.style.display = 'none';
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جاري الحفظ...';
+
+            fetch('{{ route("hr.departments.quick_store") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({ name_ar: nameAr, name: name })
+            })
+            .then(res => res.json())
+            .then(data => {
+                btn.disabled = false;
+                btn.innerHTML = 'حفظ القسم';
+                if (data.success && data.department) {
+                    const select = document.getElementById('department_select');
+                    const option = new Option(data.department.name_ar, data.department.id, true, true);
+                    select.add(option);
+                    closeQuickDeptModal();
+                } else {
+                    errorEl.textContent = data.message || 'حدث خطأ أثناء الحفظ';
+                    errorEl.style.display = 'block';
+                }
+            })
+            .catch(err => {
+                btn.disabled = false;
+                btn.innerHTML = 'حفظ القسم';
+                errorEl.textContent = 'حدث خطأ في الاتصال';
+                errorEl.style.display = 'block';
+            });
+        }
     </script>
+
+    <!-- Quick Add Department Modal -->
+    <div id="quickDeptModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.75); z-index: 1000; align-items: center; justify-content: center; backdrop-filter: blur(4px);">
+        <div class="card" style="width: 420px; max-width: 90%; position: relative;">
+            <button type="button" onclick="closeQuickDeptModal()" style="position: absolute; top: 15px; left: 15px; background: none; border: none; color: var(--text-secondary); font-size: 1.2rem; cursor: pointer;">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <h3 style="color: var(--primary-color); margin-bottom: 15px; font-weight: 800; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">
+                <i class="fa-solid fa-sitemap"></i> إضافة قسم جديد
+            </h3>
+            <div style="margin-bottom: 1rem;">
+                <label class="form-label">اسم القسم (عربي) <span style="color: red;">*</span></label>
+                <input type="text" id="quick_dept_name_ar" class="form-control" placeholder="مثال: الاستقبال، المحاسبة...">
+                <span id="quick_dept_error" style="color: red; font-size: 0.8rem; display: none; margin-top: 4px;"></span>
+            </div>
+            <div style="margin-bottom: 1.5rem;">
+                <label class="form-label">اسم القسم (إنجليزي - اختياري)</label>
+                <input type="text" id="quick_dept_name" class="form-control" placeholder="e.g. Accounting...">
+            </div>
+            <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                <button type="button" onclick="closeQuickDeptModal()" class="btn btn-outline">إلغاء</button>
+                <button type="button" id="saveQuickDeptBtn" onclick="submitQuickDept()" class="btn" style="background: linear-gradient(135deg, #4CAF50, #2E7D32); color: white; border: none; font-weight: bold; padding: 8px 20px;">
+                    حفظ القسم
+                </button>
+            </div>
+        </div>
+    </div>
 </x-layouts.admin>
 
 

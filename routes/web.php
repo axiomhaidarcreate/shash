@@ -86,6 +86,13 @@ Route::middleware('auth')->group(function () {
             Route::patch('/{employee}/approve', [\App\Http\Controllers\HR\EmployeeController::class, 'approve'])->name('approve');
         });
 
+        Route::prefix('departments')->name('departments.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\HR\DepartmentController::class, 'index'])->name('index');
+            Route::post('/', [\App\Http\Controllers\HR\DepartmentController::class, 'store'])->name('store');
+            Route::post('/quick', [\App\Http\Controllers\HR\DepartmentController::class, 'quickStore'])->name('quick_store');
+            Route::delete('/{department}', [\App\Http\Controllers\HR\DepartmentController::class, 'destroy'])->name('destroy');
+        });
+
         Route::resource('contract_templates', \App\Http\Controllers\HR\ContractTemplateController::class);
 
         Route::prefix('attendance')->name('attendance.')->group(function () {

@@ -68,6 +68,13 @@
             </div>
             <h3 style="color: var(--text-primary); font-size: 1.3rem; font-weight: 800;">التقارير</h3>
         </a>
+
+        <a href="{{ url('/hr/departments') }}" class="card" style="text-decoration: none; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 15px; padding: 2rem; transition: all 0.3s ease; text-align: center;">
+            <div style="width: 70px; height: 70px; border-radius: 50%; background: rgba(0, 150, 136, 0.15); color: #009688; display: flex; align-items: center; justify-content: center; font-size: 2rem;">
+                <i class="fa-solid fa-sitemap"></i>
+            </div>
+            <h3 style="color: var(--text-primary); font-size: 1.3rem; font-weight: 800;">الأقسام</h3>
+        </a>
     </div>
 
     <!-- Styles for hover effect -->
