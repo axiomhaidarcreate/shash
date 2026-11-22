@@ -65,3 +65,4 @@ class DepartmentController extends Controller
         return redirect()->route('hr.departments.index')->with('success', 'تم حذف القسم بنجاح');
     }
 }
+

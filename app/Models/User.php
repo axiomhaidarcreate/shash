@@ -50,4 +50,9 @@ class User extends Authenticatable
             'assigned_kitchens' => 'array',
         ];
     }
+
+    public function getRoleAttribute()
+    {
+        return $this->roles->first()?->name;
+    }
 }

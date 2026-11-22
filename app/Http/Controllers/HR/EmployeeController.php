@@ -50,7 +50,7 @@ class EmployeeController extends Controller
             })->count();
         });
 
-        $pendingEmployees = auth()->user()->role === 'admin'
+        $pendingEmployees = (auth()->check() && (auth()->user()->role === 'admin' || auth()->user()->hasRole('admin')))
             ? Employee::with('department')->where('is_active', false)->where('notes', 'like', '%في انتظار موافقة المدير%')->latest()->get()
             : collect();
 
@@ -214,10 +214,10 @@ class EmployeeController extends Controller
         $this->clearEmployeeCache();
 
         if (auth()->user()->role === 'accountant') {
-            return redirect()->route('employees.index')->with('info', 'تم إرسال بيانات الموظف بنجاح. في انتظار موافقة المدير لتفعيل الحساب.');
+            return redirect()->route('hr.employees.index')->with('info', 'تم إرسال بيانات الموظف بنجاح. في انتظار موافقة المدير لتفعيل الحساب.');
         }
 
-        return redirect()->route('employees.index')->with('success', 'تم إضافة الموظف بنجاح.');
+        return redirect()->route('hr.employees.index')->with('success', 'تم إضافة الموظف بنجاح.');
     }
 
     public function approve(Employee $employee)
@@ -238,7 +238,7 @@ class EmployeeController extends Controller
         }
 
         $this->clearEmployeeCache();
-        return redirect()->route('employees.index')->with('success', 'تم تفعيل الموظف "' . $employee->full_name_ar . '" بنجاح.');
+        return redirect()->route('hr.employees.index')->with('success', 'تم تفعيل الموظف "' . $employee->full_name_ar . '" بنجاح.');
     }
 
     public function edit(Employee $employee)
@@ -349,7 +349,7 @@ class EmployeeController extends Controller
         // ────────────────────────────────────────────────────────────────────
 
         $this->clearEmployeeCache();
-        return redirect()->route('employees.index')->with('success', 'تم تحديث بيانات الموظف بنجاح.');
+        return redirect()->route('hr.employees.index')->with('success', 'تم تحديث بيانات الموظف بنجاح.');
     }
 
     public function destroy(Employee $employee)
@@ -368,7 +368,7 @@ class EmployeeController extends Controller
         }
 
         $this->clearEmployeeCache();
-        return redirect()->route('employees.dismissed')->with('success', 'تم نقل الموظف إلى قسم المفصولين.');
+        return redirect()->route('hr.employees.index')->with('success', 'تم حذف الموظف ونقله لقسم المفصولين بنجاح.');
     }
 
     public function toggleStatus(Employee $employee)

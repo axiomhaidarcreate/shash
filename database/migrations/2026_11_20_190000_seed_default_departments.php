@@ -40,3 +40,4 @@ return new class extends Migration
         // Don't delete departments on rollback to avoid cascade issues
     }
 };
+

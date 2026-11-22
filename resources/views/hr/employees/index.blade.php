@@ -11,7 +11,7 @@
             <p>تتبع وإدارة جميع أعضاء الفريق في مكان واحد</p>
         </div>
         <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-            @if(auth()->check() && auth()->user()->role === 'admin')
+            @if(auth()->check() && (auth()->user()->role === 'admin' || auth()->user()->hasRole('admin')))
             <a href="{{ route('hr.contract_templates.index') }}" class="btn btn-outline">
                 <i class="fa-solid fa-file-contract"></i> قوالب العقود
             </a>
@@ -41,7 +41,7 @@
     @endif
 
     {{-- Pending Employees Section (Admin Only) --}}
-    @if(auth()->user()->role === 'admin' && $pendingEmployees->count() > 0)
+    @if(auth()->check() && (auth()->user()->role === 'admin' || auth()->user()->hasRole('admin')) && $pendingEmployees->count() > 0)
     <div class="card" style="margin-bottom: 1.5rem; border-color: rgba(255, 152, 0, 0.3); padding: 0;">
         <div style="padding: 1rem 1.5rem; border-bottom: 1px solid var(--border-color); display: flex; align-items: center; gap: 10px; background: rgba(255,152,0,0.05);">
             <i class="fa-solid fa-user-clock" style="color: var(--warning-color);"></i>
@@ -157,7 +157,7 @@
                         <th scope="col">الراتب</th>
                         <th scope="col">أيام العمل</th>
                         <th scope="col">الحالة</th>
-                        <th scope="col" style="text-align: center;">الإجراءات</th>
+                        <th scope="col" style="text-align: center; min-width: 170px;">الإجراءات</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -188,27 +188,27 @@
                                 <span class="badge badge-active">نشط</span>
                             @endif
                         </td>
-                        <td style="text-align: center;">
-                            <div style="display: flex; align-items: center; justify-content: center; gap: 8px;">
-                                <!-- Print Contract (if linked) -->
-                                @if($employee->contract_template_id)
-                                <a href="{{ route('hr.employees.printContract', $employee) }}" target="_blank" class="btn-ghost" title="طباعة العقد المربوط" style="color: var(--success-color);">
-                                    <i class="fa-solid fa-print"></i>
+                        <td style="text-align: center; white-space: nowrap;">
+                            <div style="display: inline-flex; align-items: center; justify-content: center; gap: 6px;">
+                                <!-- Edit Button -->
+                                <a href="{{ route('hr.employees.edit', $employee) }}" class="btn btn-sm" title="تعديل" style="background: #2196F3; color: #fff; border: none; padding: 0.35rem 0.75rem; font-size: 0.82rem; min-height: unset; border-radius: var(--radius-sm); display: inline-flex; align-items: center; gap: 5px; text-decoration: none;">
+                                    <i class="fa-solid fa-pen-to-square"></i> تعديل
                                 </a>
-                                @endif
-                                <!-- Edit -->
-                                @if(auth()->check() && auth()->user()->role === 'admin')
-                                <a href="{{ route('hr.employees.edit', $employee) }}" class="btn-ghost" title="تعديل">
-                                    <i class="fa-solid fa-pen-to-square"></i>
-                                </a>
-                                <!-- Dismiss (soft delete) -->
-                                <form action="{{ route('hr.employees.destroy', $employee) }}" method="POST" style="display: inline;" onsubmit="return confirm('هل تريد فصل الموظف ونقله لقسم المفصولين؟');">
+
+                                <!-- Delete Button -->
+                                <form action="{{ route('hr.employees.destroy', $employee) }}" method="POST" style="display: inline-block; margin: 0;" onsubmit="return confirm('هل أنت متأكد من حذف الموظف ({{ $employee->full_name_ar }})؟');">
                                     @csrf
                                     @method('DELETE')
-                                    <button type="submit" class="btn-ghost" title="فصل الموظف" style="color: var(--danger-color); border: none; background: transparent; cursor: pointer;">
-                                        <i class="fa-solid fa-user-slash"></i>
+                                    <button type="submit" class="btn btn-sm" title="حذف" style="background: #F44336; color: #fff; border: none; padding: 0.35rem 0.75rem; font-size: 0.82rem; min-height: unset; border-radius: var(--radius-sm); cursor: pointer; display: inline-flex; align-items: center; gap: 5px;">
+                                        <i class="fa-solid fa-trash"></i> حذف
                                     </button>
                                 </form>
+
+                                <!-- Print Contract (if linked) -->
+                                @if($employee->contract_template_id)
+                                <a href="{{ route('hr.employees.printContract', $employee) }}" target="_blank" class="btn btn-sm btn-outline" title="طباعة العقد" style="padding: 0.35rem 0.6rem; font-size: 0.82rem; min-height: unset; color: var(--success-color); border-color: rgba(76, 175, 80, 0.4);">
+                                    <i class="fa-solid fa-print"></i>
+                                </a>
                                 @endif
                             </div>
                         </td>
