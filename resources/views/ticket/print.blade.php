@@ -221,20 +221,30 @@
 
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
     <script>
-        document.addEventListener("DOMContentLoaded", function() {
+        function renderBarcodes() {
             @foreach($products as $index => $product)
-            JsBarcode("#barcode-svg-{{ $index }}", "{{ $ticket->barcode }}", {
-                format: "CODE128",
-                lineColor: "#000",
-                width: 3,
-                height: 70,
-                displayValue: true,
-                fontSize: 24,
-                fontOptions: "bold",
-                margin: 2
-            });
+            try {
+                JsBarcode("#barcode-svg-{{ $index }}", "{{ $ticket->barcode }}", {
+                    format: "CODE128",
+                    lineColor: "#000",
+                    width: 3,
+                    height: 70,
+                    displayValue: true,
+                    fontSize: 24,
+                    fontOptions: "bold",
+                    margin: 2
+                });
+            } catch(e) {
+                console.error("Barcode error:", e);
+            }
             @endforeach
-        });
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener("DOMContentLoaded", renderBarcodes);
+        } else {
+            renderBarcodes();
+        }
     </script>
 </body>
 </html>

@@ -536,45 +536,49 @@
                     function printNext() {
                         if (currentIndex >= productsCount) return;
 
-                        const printUrl = `/ticket/${ticketId}/print?product_index=${currentIndex}`;
-                        let iframeId = 'ticket-print-frame-' + currentIndex;
-                        let iframe = document.getElementById(iframeId);
-                        
-                        if (!iframe) {
-                            iframe = document.createElement('iframe');
-                            iframe.id = iframeId;
-                            iframe.style.display = 'none';
-                            document.body.appendChild(iframe);
-                        }
+                        const oldIframe = document.getElementById('ticket-silent-print-frame');
+                        if (oldIframe) oldIframe.remove();
 
-                        // Don't use auto=1 so the iframe doesn't call print itself. We control it from parent.
-                        iframe.src = printUrl + '&t=' + new Date().getTime();
+                        const iframe = document.createElement('iframe');
+                        iframe.id = 'ticket-silent-print-frame';
+                        iframe.style.position = 'fixed';
+                        iframe.style.right = '0';
+                        iframe.style.bottom = '0';
+                        iframe.style.width = '10px';
+                        iframe.style.height = '10px';
+                        iframe.style.border = '0';
+                        iframe.style.opacity = '0.01';
+                        iframe.style.pointerEvents = 'none';
+                        iframe.style.zIndex = '-99999';
+                        document.body.appendChild(iframe);
+
+                        const printUrl = `/ticket/${ticketId}/print?product_index=${currentIndex}&t=${Date.now()}`;
+                        iframe.src = printUrl;
                         
                         iframe.onload = function() {
-                            iframe.contentWindow.focus();
-                            
-                            let jobDone = false;
-                            
-                            // Listen for afterprint event
-                            iframe.contentWindow.addEventListener('afterprint', function() {
-                                if (!jobDone) {
-                                    jobDone = true;
-                                    currentIndex++;
-                                    setTimeout(printNext, 1000); // 1s delay before next ticket to let printer cut
-                                }
-                            });
-
-                            // Call print
-                            iframe.contentWindow.print();
-
-                            // Fallback timeout in case afterprint is not supported or silent printing is on
                             setTimeout(() => {
-                                if (!jobDone) {
-                                    jobDone = true;
-                                    currentIndex++;
-                                    printNext();
+                                try {
+                                    iframe.contentWindow.focus();
+                                    
+                                    let jobDone = false;
+                                    function nextTicket() {
+                                        if (jobDone) return;
+                                        jobDone = true;
+                                        currentIndex++;
+                                        if (currentIndex < productsCount) {
+                                            setTimeout(printNext, 800);
+                                        }
+                                    }
+
+                                    iframe.contentWindow.addEventListener('afterprint', nextTicket, { once: true });
+                                    iframe.contentWindow.print();
+
+                                    // Fallback for kiosk/silent printing
+                                    setTimeout(nextTicket, 2000);
+                                } catch (e) {
+                                    console.error("Print error:", e);
                                 }
-                            }, 3500); // 3.5 seconds fallback per ticket
+                            }, 150);
                         };
                     }
 
