@@ -778,6 +778,14 @@ class ArtistsManager extends Component
         $this->filter_booking_musician_id = '';
     }
 
+    public function filterNextMonth() {
+        $this->filter_booking_date_from = now()->addMonth()->startOfMonth()->toDateString();
+        $this->filter_booking_date_to = now()->addMonth()->endOfMonth()->toDateString();
+        $this->filter_booking_status = '';
+        $this->filter_booking_artist_id = '';
+        $this->filter_booking_musician_id = '';
+    }
+
     public function resetAccountsFilters() {
         $this->accounts_date_from = '';
         $this->accounts_date_to = '';
@@ -798,6 +806,14 @@ class ArtistsManager extends Component
     public function accountsFilterThisMonth() {
         $this->accounts_date_from = now()->startOfMonth()->toDateString();
         $this->accounts_date_to = now()->endOfMonth()->toDateString();
+        $this->accounts_filter_status = '';
+        $this->accounts_selected_artist_id = '';
+        $this->accounts_selected_event_id = '';
+    }
+
+    public function accountsFilterNextMonth() {
+        $this->accounts_date_from = now()->addMonth()->startOfMonth()->toDateString();
+        $this->accounts_date_to = now()->addMonth()->endOfMonth()->toDateString();
         $this->accounts_filter_status = '';
         $this->accounts_selected_artist_id = '';
         $this->accounts_selected_event_id = '';

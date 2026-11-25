@@ -485,6 +485,9 @@
                 <button wire:click="accountsFilterThisMonth" class="btn-filter {{ $accounts_date_from === now()->startOfMonth()->toDateString() && $accounts_date_to === now()->endOfMonth()->toDateString() && $accounts_filter_status === '' ? 'active' : '' }}">
                     <i class="fa-solid fa-calendar-week me-1"></i> حفلات الشهر
                 </button>
+                <button wire:click="accountsFilterNextMonth" class="btn-filter {{ $accounts_date_from === now()->addMonth()->startOfMonth()->toDateString() && $accounts_date_to === now()->addMonth()->endOfMonth()->toDateString() && $accounts_filter_status === '' ? 'active' : '' }}">
+                    <i class="fa-solid fa-calendar-plus me-1"></i> حفلات الشهر القادم
+                </button>
                 <button wire:click="setAccountsStatus('approved')" class="btn-filter {{ $accounts_filter_status === 'approved' ? 'active' : '' }}">
                     <i class="fa-solid fa-check-circle me-1"></i> المعتمد
                 </button>
@@ -851,6 +854,9 @@
                 </button>
                 <button wire:click="filterThisMonth" class="btn-filter {{ $filter_booking_date_from === now()->startOfMonth()->toDateString() && $filter_booking_date_to === now()->endOfMonth()->toDateString() ? 'active' : '' }}">
                     <i class="fa-solid fa-calendar-week me-1"></i> حفلات الشهر
+                </button>
+                <button wire:click="filterNextMonth" class="btn-filter {{ $filter_booking_date_from === now()->addMonth()->startOfMonth()->toDateString() && $filter_booking_date_to === now()->addMonth()->endOfMonth()->toDateString() ? 'active' : '' }}">
+                    <i class="fa-solid fa-calendar-plus me-1"></i> حفلات الشهر القادم
                 </button>
                 <button wire:click="$set('filter_booking_status', 'approved')" class="btn-filter {{ $filter_booking_status === 'approved' ? 'active' : '' }}">
                     <i class="fa-solid fa-check-circle me-1"></i> المعتمد
