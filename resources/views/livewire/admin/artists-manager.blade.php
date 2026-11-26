@@ -813,6 +813,9 @@
         <button wire:click="openBookingModal" class="btn" style="background: linear-gradient(135deg, #4CAF50, #2E7D32); color:white;">
             <i class="fa-solid fa-plus me-1"></i> إضافة حجز جديد
         </button>
+        <button wire:click="openAddMonthModal" class="btn" style="background: linear-gradient(135deg, #ff9800, #f57c00); color:white; border:none;">
+            <i class="fa-solid fa-calendar-plus me-1"></i> إضافة شهر
+        </button>
     </div>
 
     <!-- الفلاتر المتقدمة لحجوزات الحفلات -->
@@ -846,7 +849,7 @@
                         box-shadow: 0 4px 10px rgba(76,175,80,0.3);
                     }
                 </style>
-                <button wire:click="resetFilters" class="btn-filter {{ $filter_booking_status === '' && $filter_booking_date_from === '' && $filter_booking_artist_id === '' && $filter_booking_musician_id === '' ? 'active' : '' }}">
+                <button wire:click="resetFilters" class="btn-filter {{ $filter_booking_status === '' && $filter_booking_date_from === '' && $filter_booking_artist_id === '' && $filter_booking_musician_id === '' && $filter_booking_month === '' ? 'active' : '' }}">
                     <i class="fa-solid fa-border-all me-1"></i> الكل
                 </button>
                 <button wire:click="filterToday" class="btn-filter {{ $filter_booking_date_from === now()->toDateString() && $filter_booking_date_to === now()->toDateString() ? 'active' : '' }}">
@@ -858,10 +861,22 @@
                 <button wire:click="filterNextMonth" class="btn-filter {{ $filter_booking_date_from === now()->addMonth()->startOfMonth()->toDateString() && $filter_booking_date_to === now()->addMonth()->endOfMonth()->toDateString() ? 'active' : '' }}">
                     <i class="fa-solid fa-calendar-plus me-1"></i> حفلات الشهر القادم
                 </button>
-                <button wire:click="$set('filter_booking_status', 'approved')" class="btn-filter {{ $filter_booking_status === 'approved' ? 'active' : '' }}">
+                <select wire:model.live="filter_booking_month" class="btn-filter" style="cursor: pointer; outline: none; background-color: #161822; color: #e2e8f0; border: 1px solid rgba(76,175,80,0.35);">
+                    <option value="">📅 اختر الشهر...</option>
+                    @foreach($availableBookingMonths as $ymKey => $ymLabel)
+                        <option value="{{ $ymKey }}">{{ $ymLabel }}</option>
+                    @endforeach
+                </select>
+                <button wire:click="$set('filter_booking_status', '{{ $filter_booking_status === 'available' ? '' : 'available' }}')" class="btn-filter {{ $filter_booking_status === 'available' ? 'active' : '' }}">
+                    <i class="fa-solid fa-circle-check me-1"></i> متاح
+                </button>
+                <button wire:click="$set('filter_booking_status', '{{ $filter_booking_status === 'booked' ? '' : 'booked' }}')" class="btn-filter {{ $filter_booking_status === 'booked' ? 'active' : '' }}">
+                    <i class="fa-solid fa-bookmark me-1"></i> محجوز
+                </button>
+                <button wire:click="$set('filter_booking_status', '{{ $filter_booking_status === 'approved' ? '' : 'approved' }}')" class="btn-filter {{ $filter_booking_status === 'approved' ? 'active' : '' }}">
                     <i class="fa-solid fa-check-circle me-1"></i> المعتمد
                 </button>
-                <button wire:click="$set('filter_booking_status', 'completed')" class="btn-filter {{ $filter_booking_status === 'completed' ? 'active' : '' }}">
+                <button wire:click="$set('filter_booking_status', '{{ $filter_booking_status === 'completed' ? '' : 'completed' }}')" class="btn-filter {{ $filter_booking_status === 'completed' ? 'active' : '' }}">
                     <i class="fa-solid fa-flag-checkered me-1"></i> المكتمل
                 </button>
             </div>
@@ -906,6 +921,8 @@
                     </span>
                     <select wire:model.live="filter_booking_status" class="form-control" style="background: rgba(255,255,255,0.02); border-color: rgba(255,255,255,0.1); color: var(--text-primary);">
                         <option value="">جميع الحالات</option>
+                        <option value="available">متاح (بدون حجوزات)</option>
+                        <option value="booked">محجوز (به حجوزات)</option>
                         <option value="approved">معتمد (قادمة أو قائمة)</option>
                         <option value="suggested">مقترح (بانتظار الاعتماد)</option>
                         <option value="completed">مكتملة</option>
@@ -1080,11 +1097,11 @@
                                                 $textColor = $isFemale ? '#f06292' : '#4fc3f7';
                                                 $bColor = $isFemale ? 'rgba(233,30,99,0.3)' : 'rgba(33,150,243,0.3)';
                                             @endphp
-                                            <span style="background: {{ $bgColor }}; color: {{ $textColor }}; border: 1px solid {{ $bColor }}; font-size: 0.64rem; padding: 2px 6px; border-radius: 12px; display: inline-flex; align-items: center; gap: 3px; max-width: 100%;">
-                                                <i class="fa-solid fa-microphone" style="font-size: 0.6rem;"></i>
+                                            <span style="background: {{ $bgColor }}; color: {{ $textColor }}; border: 1px solid {{ $bColor }}; font-size: 0.8rem; font-weight: 700; padding: 4px 8px; border-radius: 12px; display: inline-flex; align-items: center; gap: 5px; max-width: 100%;">
+                                                <i class="fa-solid fa-microphone" style="font-size: 0.72rem;"></i>
                                                 <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ $bk->artist->stage_name ?: $bk->artist->real_name ?? '' }}</span>
                                                 @if(!$ev->is_ended)
-                                                    <button wire:click="deleteBooking({{ $bk->id }})" wire:confirm="هل أنت متأكد من حذف حجز الفنان {{ $bk->artist->stage_name ?: $bk->artist->real_name ?? '' }} من هذه الحفلة؟" style="background: none; border: none; color: #F44336; cursor: pointer; padding: 0; font-size: 0.65rem; line-height: 1;" title="حذف هذا الحجز">
+                                                    <button wire:click="deleteBooking({{ $bk->id }})" wire:confirm="هل أنت متأكد من حذف حجز الفنان {{ $bk->artist->stage_name ?: $bk->artist->real_name ?? '' }} من هذه الحفلة؟" style="background: none; border: none; color: #F44336; cursor: pointer; padding: 0; font-size: 0.75rem; line-height: 1;" title="حذف هذا الحجز">
                                                         <i class="fa-solid fa-xmark"></i>
                                                     </button>
                                                 @endif
@@ -1094,12 +1111,12 @@
                                 @endif
 
                                 @if($evBookings->whereNotNull('musician_id')->count() > 0)
-                                    <div style="display: flex; flex-wrap: wrap; gap: 3px; justify-content: center;">
+                                    <div style="display: flex; flex-wrap: wrap; gap: 4px; justify-content: center;">
                                         @foreach($evBookings->whereNotNull('musician_id') as $bk)
-                                            <span style="background: rgba(76,175,80,0.14); color: #81c784; border: 1px solid rgba(76,175,80,0.35); font-size: 0.64rem; padding: 2px 7px; border-radius: 12px; display: inline-flex; align-items: center; gap: 3px; max-width: 100%;">
+                                            <span style="background: rgba(76,175,80,0.14); color: #81c784; border: 1px solid rgba(76,175,80,0.35); font-size: 0.78rem; font-weight: 700; padding: 4px 8px; border-radius: 12px; display: inline-flex; align-items: center; gap: 5px; max-width: 100%;">
                                                 <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ $bk->musician->stage_name ?: $bk->musician->real_name ?? '' }}</span>
                                                 @if(!$ev->is_ended)
-                                                    <button wire:click="deleteBooking({{ $bk->id }})" wire:confirm="هل أنت متأكد من حذف حجز العازف {{ $bk->musician->stage_name ?: $bk->musician->real_name ?? '' }} من هذه الحفلة؟" style="background: none; border: none; color: #F44336; cursor: pointer; padding: 0; font-size: 0.65rem; line-height: 1;" title="حذف هذا الحجز">
+                                                    <button wire:click="deleteBooking({{ $bk->id }})" wire:confirm="هل أنت متأكد من حذف حجز العازف {{ $bk->musician->stage_name ?: $bk->musician->real_name ?? '' }} من هذه الحفلة؟" style="background: none; border: none; color: #F44336; cursor: pointer; padding: 0; font-size: 0.75rem; line-height: 1;" title="حذف هذا الحجز">
                                                         <i class="fa-solid fa-xmark"></i>
                                                     </button>
                                                 @endif
@@ -1935,6 +1952,67 @@
                         <button type="submit" class="btn" style="background: linear-gradient(135deg, #9C27B0, #6A1B9A); color:white;" wire:loading.attr="disabled" wire:target="savePostImage">
                             <span wire:loading.remove wire:target="savePostImage"><i class="fa-solid fa-check me-1"></i> حفظ الصورة</span>
                             <span wire:loading wire:target="savePostImage"><i class="fa-solid fa-spinner fa-spin me-1"></i> جاري الحفظ...</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    @endif
+
+    {{-- ==========================================
+         MODAL: Add Full Month of Available Days
+    ========================================== --}}
+    @if($isAddMonthModalOpen)
+        <div style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:1060; display:flex; justify-content:center; align-items:center; backdrop-filter: blur(6px);">
+            <div class="card p-4" style="background:var(--surface-color); border:1px solid rgba(255,152,0,0.35); width:95%; max-width:460px; border-radius:20px; box-shadow: 0 24px 60px rgba(0,0,0,0.7);">
+                <div class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-4">
+                    <h5 class="fw-bold m-0" style="color: #ff9800;">
+                        <i class="fa-solid fa-calendar-plus me-2"></i> إضافة شهر كامل (أيام متاحة)
+                    </h5>
+                    <button type="button" style="font-size:1.3rem; background:none; border:none; color:var(--text-secondary); cursor:pointer;" wire:click="$set('isAddMonthModalOpen', false)">&times;</button>
+                </div>
+
+                <form wire:submit.prevent="saveAddMonth">
+                    <div class="row mb-3">
+                        <div class="col-7">
+                            <label class="form-label fw-bold">الشهر <span class="text-danger">*</span></label>
+                            <select wire:model="add_month_number" class="form-control" required>
+                                <option value="1">يناير (1)</option>
+                                <option value="2">فبراير (2)</option>
+                                <option value="3">مارس (3)</option>
+                                <option value="4">أبريل (4)</option>
+                                <option value="5">مايو (5)</option>
+                                <option value="6">يونيو (6)</option>
+                                <option value="7">يوليو (7)</option>
+                                <option value="8">أغسطس (8)</option>
+                                <option value="9">سبتمبر (9)</option>
+                                <option value="10">أكتوبر (10)</option>
+                                <option value="11">نوفمبر (11)</option>
+                                <option value="12">ديسمبر (12)</option>
+                            </select>
+                            @error('add_month_number') <span class="text-danger small">{{ $message }}</span> @enderror
+                        </div>
+                        <div class="col-5">
+                            <label class="form-label fw-bold">السنة <span class="text-danger">*</span></label>
+                            <input type="number" wire:model="add_month_year" class="form-control" min="2020" max="2040" required>
+                            @error('add_month_year') <span class="text-danger small">{{ $message }}</span> @enderror
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">العنوان الافتراضي للأيام <span class="text-danger">*</span></label>
+                        <input type="text" wire:model="add_month_title" class="form-control" placeholder="مثال: حفلة متاحة" required>
+                        @error('add_month_title') <span class="text-danger small">{{ $message }}</span> @enderror
+                        <small style="color:var(--text-secondary); font-size:0.75rem;">
+                            سيتم إنشاء بطاقة «متاح» خضراء لكل يوم في الشهر (مع التاج الذهبي لأيام الخميس والجمعة تلقائياً)، ولن تتأثر الأيام الموجودة مسبقاً.
+                        </small>
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-2 pt-3 border-top">
+                        <button type="button" wire:click="$set('isAddMonthModalOpen', false)" class="btn" style="background: var(--surface-hover); color: var(--text-primary); border:1px solid var(--border-color);">إلغاء</button>
+                        <button type="submit" class="btn" style="background: linear-gradient(135deg, #ff9800, #f57c00); color:white; border:none;" wire:loading.attr="disabled" wire:target="saveAddMonth">
+                            <span wire:loading.remove wire:target="saveAddMonth"><i class="fa-solid fa-check me-1"></i> إنشاء أيام الشهر</span>
+                            <span wire:loading wire:target="saveAddMonth"><i class="fa-solid fa-spinner fa-spin me-1"></i> جاري الإنشاء...</span>
                         </button>
                     </div>
                 </form>

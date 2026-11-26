@@ -30,6 +30,12 @@ class ArtistsManager extends Component
     public $isAddToEventModalOpen = false;
     public $isPostShareModalOpen = false;
     public $isUploadPostImageModalOpen = false;
+    public $isAddMonthModalOpen = false;
+
+    // Add Month State
+    public $add_month_number;
+    public $add_month_year;
+    public $add_month_title = 'حفلة متاحة';
 
     // View Event State
     public $viewingEvent = null;
@@ -111,6 +117,7 @@ class ArtistsManager extends Component
     public $filter_booking_date_from = '';
     public $filter_booking_date_to = '';
     public $filter_booking_status = '';
+    public $filter_booking_month = '';
 
     // --- Artist Filters ---
     public $filter_artist_nationality = '';
@@ -759,6 +766,7 @@ class ArtistsManager extends Component
         $this->filter_booking_date_from = '';
         $this->filter_booking_date_to = '';
         $this->filter_booking_status = '';
+        $this->filter_booking_month = '';
     }
 
     public function filterToday() {
@@ -768,6 +776,7 @@ class ArtistsManager extends Component
         $this->filter_booking_status = '';
         $this->filter_booking_artist_id = '';
         $this->filter_booking_musician_id = '';
+        $this->filter_booking_month = '';
     }
 
     public function filterThisMonth() {
@@ -776,6 +785,7 @@ class ArtistsManager extends Component
         $this->filter_booking_status = '';
         $this->filter_booking_artist_id = '';
         $this->filter_booking_musician_id = '';
+        $this->filter_booking_month = now()->format('Y-m');
     }
 
     public function filterNextMonth() {
@@ -784,6 +794,71 @@ class ArtistsManager extends Component
         $this->filter_booking_status = '';
         $this->filter_booking_artist_id = '';
         $this->filter_booking_musician_id = '';
+        $this->filter_booking_month = now()->addMonth()->format('Y-m');
+    }
+
+    public function updatedFilterBookingMonth($value) {
+        if (empty($value)) {
+            $this->filter_booking_date_from = '';
+            $this->filter_booking_date_to = '';
+            return;
+        }
+        try {
+            $dt = \Carbon\Carbon::createFromFormat('Y-m', $value);
+            $this->filter_booking_date_from = $dt->copy()->startOfMonth()->toDateString();
+            $this->filter_booking_date_to = $dt->copy()->endOfMonth()->toDateString();
+        } catch (\Exception $e) {}
+    }
+
+    public function openAddMonthModal() {
+        $nextMonth = now()->addMonth();
+        $this->add_month_number = $nextMonth->month;
+        $this->add_month_year = $nextMonth->year;
+        $this->add_month_title = 'حفلة متاحة';
+        $this->isAddMonthModalOpen = true;
+    }
+
+    public function saveAddMonth() {
+        $this->validate([
+            'add_month_number' => 'required|integer|min:1|max:12',
+            'add_month_year' => 'required|integer|min:2020|max:2040',
+            'add_month_title' => 'required|string|max:255',
+        ]);
+
+        $startOfMonth = \Carbon\Carbon::create((int)$this->add_month_year, (int)$this->add_month_number, 1);
+        $daysInMonth = $startOfMonth->daysInMonth;
+        $createdCount = 0;
+
+        for ($day = 1; $day <= $daysInMonth; $day++) {
+            $dateStr = $startOfMonth->copy()->day($day)->toDateString();
+            $exists = Event::whereDate('event_date', $dateStr)->exists();
+            if (!$exists) {
+                Event::create([
+                    'title' => $this->add_month_title ?: 'حفلة متاحة',
+                    'event_date' => $dateStr,
+                    'is_active' => true,
+                    'is_ended' => false,
+                    'is_hidden' => false,
+                ]);
+                $createdCount++;
+            }
+        }
+
+        $monthKey = $startOfMonth->format('Y-m');
+        $this->filter_booking_month = $monthKey;
+        $this->filter_booking_date_from = $startOfMonth->copy()->startOfMonth()->toDateString();
+        $this->filter_booking_date_to = $startOfMonth->copy()->endOfMonth()->toDateString();
+        $this->filter_booking_status = '';
+        $this->filter_booking_artist_id = '';
+        $this->filter_booking_musician_id = '';
+        $this->isAddMonthModalOpen = false;
+
+        $monthName = $startOfMonth->locale('ar')->translatedFormat('F Y');
+        if ($createdCount > 0) {
+            $this->dispatch('notify', ['message' => "تمت إضافة {$createdCount} يوم متاح لشهر {$monthName} بنجاح!", 'type' => 'success']);
+        } else {
+            $this->dispatch('notify', ['message' => "جميع أيام شهر {$monthName} مضافة مسبقاً.", 'type' => 'info']);
+        }
     }
 
     public function resetAccountsFilters() {
@@ -838,6 +913,16 @@ class ArtistsManager extends Component
         // Filter by Status
         if ($this->filter_booking_status === 'completed') {
             $eventsQuery->where('is_ended', true);
+        } elseif ($this->filter_booking_status === 'available') {
+            $eventsQuery->where(function($q) {
+                $q->where('is_ended', false)
+                  ->orWhereNull('is_ended');
+            })->whereDoesntHave('artistBookings');
+        } elseif ($this->filter_booking_status === 'booked') {
+            $eventsQuery->where(function($q) {
+                $q->where('is_ended', false)
+                  ->orWhereNull('is_ended');
+            })->whereHas('artistBookings');
         } elseif ($this->filter_booking_status === 'approved') {
             $eventsQuery->where(function($q) {
                 $q->where('is_ended', false)
@@ -891,6 +976,28 @@ class ArtistsManager extends Component
         // Get unique nationalities for dropdown
         $artistNationalities = Artist::whereNotNull('nationality')->where('nationality', '!=', '')->distinct()->pluck('nationality');
 
+        // Build list of available months (from events + current & next month)
+        $monthKeys = Event::whereNotNull('event_date')
+            ->pluck('event_date')
+            ->map(function ($d) {
+                try { return \Carbon\Carbon::parse($d)->format('Y-m'); } catch (\Exception $e) { return null; }
+            })
+            ->filter()
+            ->push(now()->format('Y-m'))
+            ->push(now()->addMonth()->format('Y-m'))
+            ->unique()
+            ->sort()
+            ->values();
+
+        $availableBookingMonths = $monthKeys->mapWithKeys(function ($ym) {
+            try {
+                $label = \Carbon\Carbon::createFromFormat('Y-m', $ym)->locale('ar')->translatedFormat('F Y');
+            } catch (\Exception $e) {
+                $label = $ym;
+            }
+            return [$ym => $label];
+        });
+
         $renderData = [
             'artists' => Artist::latest()->get(),
             'filteredArtists' => $filteredArtists,
@@ -900,6 +1007,7 @@ class ArtistsManager extends Component
             'bookings' => ArtistBooking::with(['artist', 'musician', 'event'])->orderBy('booking_date', 'desc')->get(),
             'eventTemplates' => EventTemplate::latest()->get(),
             'eventsWithBookings' => $eventsWithBookings,
+            'availableBookingMonths' => $availableBookingMonths,
         ];
 
         // Accounts data
