@@ -935,184 +935,244 @@
         </div>
     </div>
 
-    <div class="card" style="border: 1px solid rgba(76,175,80,0.2);">
-        <div class="table-responsive" style="overflow-x: auto; width: 100%; -webkit-overflow-scrolling: touch;">
-            <table class="data-table table-hover align-middle w-100 bookings-table" style="min-width: 900px;">
-                <thead>
-                    <tr>
-                        <th>التاريخ</th>
-                        <th>اسم الحفلة</th>
-                        <th>الفنانين</th>
-                        <th>العازفين</th>
-                        <th class="text-center">حالة الحجز</th>
-                        <th class="text-center">الحالة</th>
-                        <th style="width: 70px;" class="text-center">البوست</th>
-                        <th class="text-center">إجراءات</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse($eventsWithBookings as $ev)
-                        @php
-                            $evBookings = $ev->artistBookings;
-                            $isPast = false;
-                            $isDateReached = false;
-                            if($ev->event_date) {
-                                $dtStr = $ev->event_date . ' ' . ($ev->event_time ?? '23:59:59');
-                                try { $isPast = \Carbon\Carbon::parse($dtStr)->isPast(); } catch(\Exception $e) {}
-                                try { $isDateReached = \Carbon\Carbon::parse($ev->event_date)->startOfDay()->lte(now()->startOfDay()); } catch(\Exception $e) {}
-                            }
-                        @endphp
-                        <tr>
-                            <td>
-                                <div style="color: #4CAF50; font-weight:bold; font-size:0.95rem;">{{ $ev->event_date ? \Carbon\Carbon::parse($ev->event_date)->format('Y-m-d') : 'غير محدد' }}</div>
-                                <div style="color: #ff9800; font-size:0.8rem; margin-top:2px;">
-                                    <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#ff9800; margin-left:4px;"></span>
-                                    {{ $ev->event_date ? \Carbon\Carbon::parse($ev->event_date)->locale('ar')->translatedFormat('l') : '---' }}
-                                </div>
-                            </td>
-                            <td style="font-weight:700; color:var(--text-primary);">
-                                {{ $ev->title ?? 'بدون عنوان' }}
-                                @if($ev->is_hidden)
-                                    <span class="badge ms-1" style="background: rgba(158,158,158,0.15); color: #9E9E9E; border: 1px solid rgba(158,158,158,0.3); font-size:0.65rem; padding:2px 6px; border-radius:10px;" title="هذه الحفلة مخفية من العرض الافتراضي">
-                                        <i class="fa-solid fa-eye-slash me-1"></i>مخفية
-                                    </span>
-                                @endif
-                            </td>
-                            <td>
-                                <div style="display:flex; flex-wrap:wrap; gap:4px;">
-                                    @foreach($evBookings->whereNotNull('artist_id') as $bk)
-                                        @php
-                                            $isFemale = ($bk->artist->gender ?? 'male') === 'female';
-                                            $bgColor = $isFemale ? 'rgba(233,30,99,0.1)' : 'rgba(33,150,243,0.1)';
-                                            $textColor = $isFemale ? '#E91E63' : '#2196F3';
-                                            $borderColor = $isFemale ? 'rgba(233,30,99,0.2)' : 'rgba(33,150,243,0.2)';
-                                        @endphp
-                                        <span class="badge" style="background:{{ $bgColor }}; color:{{ $textColor }}; border:1px solid {{ $borderColor }}; font-size:0.7rem; display:inline-flex; align-items:center; gap:4px;">
-                                            <i class="fa-solid fa-microphone me-1"></i>{{ $bk->artist->stage_name ?: $bk->artist->real_name ?? '' }} 
-                                            @if(!$ev->is_ended)
-                                                <button wire:click="deleteBooking({{ $bk->id }})" wire:confirm="هل أنت متأكد من حذف حجز الفنان {{ $bk->artist->stage_name ?: $bk->artist->real_name ?? '' }} من هذه الحفلة؟" style="background:none; border:none; color:#F44336; cursor:pointer; padding:0 2px; font-size:0.7rem; margin-right:2px;" title="حذف هذا الحجز">
-                                                    <i class="fa-solid fa-xmark"></i>
-                                                </button>
-                                            @endif
-                                        </span>
-                                    @endforeach
-                                </div>
-                            </td>
-                            <td>
-                                <div style="display:flex; flex-direction:column; gap:4px; align-items:center;">
-                                    @if($evBookings->whereNotNull('musician_id')->count() > 0)
-                                        @foreach($evBookings->whereNotNull('musician_id') as $bk)
-                                            <span class="badge" style="background:rgba(76,175,80,0.15); color:#4CAF50; border:1px solid #4CAF50; font-size:0.75rem; display:inline-flex; align-items:center; justify-content:space-between; width:100%; min-width:110px; max-width:140px; padding:6px 10px; border-radius:20px;">
-                                                <span>{{ $bk->musician->stage_name ?: $bk->musician->real_name ?? '' }}</span>
+    <!-- دليل الألوان والحالات -->
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-3 px-2" style="font-size: 0.8rem; color: var(--text-secondary);">
+        <div class="d-flex align-items-center gap-2">
+            <span style="display:inline-block; width:44px; height:10px; border-radius:4px; background: linear-gradient(90deg, #ffb300, #ffd54f, #ffb300);"></span>
+            <span>تعني يوم <strong style="color:#ffd54f;">الخميس أو الجمعة</strong></span>
+        </div>
+        <div class="d-flex align-items-center flex-wrap gap-3">
+            <span class="d-inline-flex align-items-center gap-1"><span style="width:10px; height:10px; border-radius:3px; background:#525866; display:inline-block;"></span> مكتملة</span>
+            <span class="d-inline-flex align-items-center gap-1"><span style="width:10px; height:10px; border-radius:3px; background:#2e7d32; display:inline-block;"></span> متاح</span>
+            <span class="d-inline-flex align-items-center gap-1"><span style="width:10px; height:10px; border-radius:3px; background:#c62828; display:inline-block;"></span> محجوز</span>
+            <span class="d-inline-flex align-items-center gap-1"><span style="width:10px; height:10px; border-radius:3px; background:#25334a; border:1px solid #2196F3; display:inline-block;"></span> اليوم</span>
+        </div>
+    </div>
+
+    <style>
+        .bookings-matrix-grid {
+            display: grid;
+            grid-template-columns: repeat(7, minmax(0, 1fr));
+            gap: 8px;
+            align-items: stretch;
+        }
+        @media (max-width: 1200px) {
+            .bookings-matrix-grid {
+                grid-template-columns: repeat(4, minmax(0, 1fr));
+            }
+        }
+        @media (max-width: 768px) {
+            .bookings-matrix-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+        @media (max-width: 480px) {
+            .bookings-matrix-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        .booking-matrix-card {
+            background: #141418;
+            border-radius: 8px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            min-height: 205px;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .booking-matrix-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
+        }
+        .booking-matrix-action-btn {
+            flex: 1;
+            height: 26px;
+            padding: 0;
+            border-radius: 5px;
+            font-size: 0.72rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            cursor: pointer;
+            transition: opacity 0.2s ease;
+        }
+        .booking-matrix-action-btn:hover {
+            opacity: 0.85;
+        }
+    </style>
+
+    @if($eventsWithBookings->count() > 0)
+        <div class="bookings-matrix-grid">
+            @foreach($eventsWithBookings as $ev)
+                @php
+                    $evBookings = $ev->artistBookings;
+                    $isPast = false;
+                    $isDateReached = false;
+                    $carbonDate = null;
+                    if ($ev->event_date) {
+                        try { $carbonDate = \Carbon\Carbon::parse($ev->event_date); } catch (\Exception $e) {}
+                        $dtStr = $ev->event_date . ' ' . ($ev->event_time ?? '23:59:59');
+                        try { $isPast = \Carbon\Carbon::parse($dtStr)->isPast(); } catch (\Exception $e) {}
+                        try { $isDateReached = \Carbon\Carbon::parse($ev->event_date)->startOfDay()->lte(now()->startOfDay()); } catch (\Exception $e) {}
+                    }
+
+                    $isWeekend = $carbonDate ? in_array($carbonDate->dayOfWeek, [\Carbon\Carbon::THURSDAY, \Carbon\Carbon::FRIDAY]) : false;
+                    $isToday = $carbonDate ? $carbonDate->isToday() : false;
+                    $hasBookings = $evBookings->count() > 0;
+                    $hasSuggested = $evBookings->where('status', 'suggested')->count() > 0;
+
+                    if ($ev->is_ended) {
+                        $statusLabel = 'مكتملة';
+                        $headerBg = '#525866';
+                        $borderColor = 'rgba(158, 158, 158, 0.35)';
+                    } elseif ($isToday) {
+                        $statusLabel = 'اليوم';
+                        $headerBg = '#25334a';
+                        $borderColor = 'rgba(33, 150, 243, 0.45)';
+                    } elseif ($hasBookings) {
+                        $statusLabel = 'محجوز';
+                        $headerBg = '#c62828';
+                        $borderColor = 'rgba(229, 57, 53, 0.45)';
+                    } else {
+                        $statusLabel = 'متاح';
+                        $headerBg = '#2e7d32';
+                        $borderColor = 'rgba(76, 175, 80, 0.45)';
+                    }
+                @endphp
+
+                <div class="booking-matrix-card" style="border: 1px solid {{ $borderColor }};">
+                    @if($isWeekend)
+                        <div style="height: 8px; width: 100%; background: linear-gradient(90deg, #ffb300, #ffd54f, #ffb300);" title="يوم خميس أو جمعة"></div>
+                    @endif
+
+                    <div style="background: {{ $headerBg }}; color: #ffffff; text-align: center; font-weight: 800; font-size: 0.78rem; padding: 4px 6px; letter-spacing: 0.3px;">
+                        {{ $statusLabel }}
+                    </div>
+
+                    <div style="padding: 8px 7px; flex: 1; display: flex; flex-direction: column; gap: 6px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; gap: 4px; font-size: 0.68rem;">
+                            <span style="color: #4CAF50; font-weight: 700; direction: ltr;">
+                                {{ $carbonDate ? $carbonDate->format('Y-m-d') : 'غير محدد' }}
+                            </span>
+                            <span style="color: #ff9800; font-weight: 600; display: inline-flex; align-items: center; gap: 3px; white-space: nowrap;">
+                                <span style="width: 5px; height: 5px; border-radius: 50%; background: #ff9800; display: inline-block;"></span>
+                                {{ $carbonDate ? $carbonDate->locale('ar')->translatedFormat('l') : '---' }}
+                            </span>
+                        </div>
+
+                        <div style="font-weight: 700; font-size: 0.78rem; color: #ffffff; text-align: center; line-height: 1.3; word-break: break-word;">
+                            {{ $ev->title ?? 'بدون عنوان' }}
+                            @if($ev->is_hidden)
+                                <span class="badge ms-1" style="background: rgba(158,158,158,0.15); color: #9E9E9E; border: 1px solid rgba(158,158,158,0.3); font-size: 0.6rem; padding: 1px 5px; border-radius: 8px;">مخفية</span>
+                            @endif
+                        </div>
+
+                        @if($evBookings->count() > 0)
+                            <div style="display: flex; flex-direction: column; gap: 4px; align-items: center; margin-top: 2px;">
+                                @if($evBookings->whereNotNull('artist_id')->count() > 0)
+                                    <div style="display: flex; flex-wrap: wrap; gap: 3px; justify-content: center;">
+                                        @foreach($evBookings->whereNotNull('artist_id') as $bk)
+                                            @php
+                                                $isFemale = ($bk->artist->gender ?? 'male') === 'female';
+                                                $bgColor = $isFemale ? 'rgba(233,30,99,0.14)' : 'rgba(33,150,243,0.14)';
+                                                $textColor = $isFemale ? '#f06292' : '#4fc3f7';
+                                                $bColor = $isFemale ? 'rgba(233,30,99,0.3)' : 'rgba(33,150,243,0.3)';
+                                            @endphp
+                                            <span style="background: {{ $bgColor }}; color: {{ $textColor }}; border: 1px solid {{ $bColor }}; font-size: 0.64rem; padding: 2px 6px; border-radius: 12px; display: inline-flex; align-items: center; gap: 3px; max-width: 100%;">
+                                                <i class="fa-solid fa-microphone" style="font-size: 0.6rem;"></i>
+                                                <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ $bk->artist->stage_name ?: $bk->artist->real_name ?? '' }}</span>
                                                 @if(!$ev->is_ended)
-                                                    <button wire:click="deleteBooking({{ $bk->id }})" wire:confirm="هل أنت متأكد من حذف حجز العازف {{ $bk->musician->stage_name ?: $bk->musician->real_name ?? '' }} من هذه الحفلة؟" style="background:none; border:none; color:#4CAF50; cursor:pointer; padding:0; font-size:0.8rem;">
+                                                    <button wire:click="deleteBooking({{ $bk->id }})" wire:confirm="هل أنت متأكد من حذف حجز الفنان {{ $bk->artist->stage_name ?: $bk->artist->real_name ?? '' }} من هذه الحفلة؟" style="background: none; border: none; color: #F44336; cursor: pointer; padding: 0; font-size: 0.65rem; line-height: 1;" title="حذف هذا الحجز">
                                                         <i class="fa-solid fa-xmark"></i>
                                                     </button>
                                                 @endif
                                             </span>
                                         @endforeach
-                                    @endif
-                                </div>
-                            </td>
-                            <td class="text-center">
-                                @php
-                                    $hasSuggested = $evBookings->where('status', 'suggested')->count() > 0;
-                                @endphp
-                                @if($hasSuggested)
-                                    <div style="display:flex; flex-direction:column; gap:4px; align-items:center;">
-                                        <span class="badge" style="background: rgba(33,150,243,0.15); color: #2196F3; border: 1px solid #2196F3; font-size:0.8rem; padding:6px 12px; border-radius:20px;">مقترح</span>
-                                        @foreach($evBookings->where('status', 'suggested') as $bk)
-                                            <button wire:click="approveBooking({{ $bk->id }})" class="btn btn-sm mt-1" style="background:none; border:none; color:#4CAF50; font-size:0.7rem; text-decoration:underline;" title="اعتماد حجز {{ $bk->artist->real_name ?? ($bk->musician->real_name ?? '') }}">اعتماد</button>
+                                    </div>
+                                @endif
+
+                                @if($evBookings->whereNotNull('musician_id')->count() > 0)
+                                    <div style="display: flex; flex-wrap: wrap; gap: 3px; justify-content: center;">
+                                        @foreach($evBookings->whereNotNull('musician_id') as $bk)
+                                            <span style="background: rgba(76,175,80,0.14); color: #81c784; border: 1px solid rgba(76,175,80,0.35); font-size: 0.64rem; padding: 2px 7px; border-radius: 12px; display: inline-flex; align-items: center; gap: 3px; max-width: 100%;">
+                                                <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ $bk->musician->stage_name ?: $bk->musician->real_name ?? '' }}</span>
+                                                @if(!$ev->is_ended)
+                                                    <button wire:click="deleteBooking({{ $bk->id }})" wire:confirm="هل أنت متأكد من حذف حجز العازف {{ $bk->musician->stage_name ?: $bk->musician->real_name ?? '' }} من هذه الحفلة؟" style="background: none; border: none; color: #F44336; cursor: pointer; padding: 0; font-size: 0.65rem; line-height: 1;" title="حذف هذا الحجز">
+                                                        <i class="fa-solid fa-xmark"></i>
+                                                    </button>
+                                                @endif
+                                            </span>
                                         @endforeach
                                     </div>
-                                @else
-                                    <span class="badge" style="background: rgba(76,175,80,0.15); color: #4CAF50; border: 1px solid #4CAF50; font-size:0.8rem; padding:6px 12px; border-radius:20px;">معتمد</span>
                                 @endif
-                            </td>
-                            <td class="text-center">
-                                @if($ev->is_ended)
-                                    <span class="badge" style="background: rgba(158,158,158,0.15); color: #9E9E9E; border: 1px solid rgba(158,158,158,0.3); border-radius:20px; padding:4px 12px;">مكتملة</span>
-                                @elseif($isPast)
-                                    <span class="badge" style="background: rgba(76,175,80,0.15); color: #4CAF50; border: 1px solid rgba(76,175,80,0.3); border-radius:20px; padding:4px 12px;">قائمة</span>
-                                @else
-                                    <span class="badge" style="background: rgba(33,150,243,0.15); color: #2196F3; border: 1px solid rgba(33,150,243,0.3); border-radius:20px; padding:4px 12px;">قادمة</span>
-                                @endif
-                            </td>
-                            <td class="text-center">
-                                @if($hasSuggested)
-                                    <div style="width:50px; height:50px; background: rgba(76,175,80,0.1); border-radius:6px; border:1px solid rgba(76,175,80,0.5); display:inline-flex; align-items:center; justify-content:center; color:#4CAF50;">
-                                        <i class="fa-solid fa-image"></i>
+
+                                @if($hasSuggested && !$ev->is_ended)
+                                    <div style="display: flex; flex-wrap: wrap; gap: 3px; justify-content: center;">
+                                        @foreach($evBookings->where('status', 'suggested') as $bk)
+                                            <button wire:click="approveBooking({{ $bk->id }})" style="background: rgba(33,150,243,0.15); border: 1px solid rgba(33,150,243,0.35); color: #4fc3f7; font-size: 0.62rem; padding: 1px 6px; border-radius: 10px; cursor: pointer;" title="اعتماد حجز {{ $bk->artist->real_name ?? ($bk->musician->real_name ?? '') }}">
+                                                <i class="fa-solid fa-check me-1"></i>اعتماد
+                                            </button>
+                                        @endforeach
                                     </div>
-                                @else
-                                    @if($ev->artist_image)
-                                        <img src="{{ asset('storage/' . $ev->artist_image) }}" style="width:50px; height:50px; object-fit:cover; border-radius:6px; border:1px solid rgba(76,175,80,0.5); cursor:pointer;" wire:click="openPostShareModal({{ $ev->id }})">
-                                    @else
-                                        <div style="width:50px; height:50px; background: rgba(76,175,80,0.1); border-radius:6px; border:1px solid rgba(76,175,80,0.5); display:inline-flex; align-items:center; justify-content:center; color:#4CAF50;">
-                                            <i class="fa-solid fa-calendar-check"></i>
-                                        </div>
-                                    @endif
                                 @endif
-                            </td>
-                            <td>
-                                <div style="display:flex; gap: 6px; flex-wrap:wrap; justify-content:center; align-items:center;">
-                                    @if(!$ev->is_ended)
-                                        <button wire:click="openAddToEventModal({{ $ev->id }})" class="btn btn-sm" style="background: rgba(76,175,80,0.12); border: 1px solid rgba(76,175,80,0.3); color: #4CAF50; font-size:0.85rem; width:32px; height:32px; padding:0; display:flex; align-items:center; justify-content:center;" title="إضافة فنان/عازف">
-                                            <i class="fa-solid fa-user-plus"></i>
-                                        </button>
-                                        <a href="{{ route('admin.customers', ['market_event' => $ev->id]) }}" class="btn btn-sm" style="background: rgba(255,152,0,0.12); border: 1px solid rgba(255,152,0,0.3); color: #ff9800; font-size:0.85rem; width:32px; height:32px; padding:0; display:flex; align-items:center; justify-content:center;" title="تسويق الحفلة">
-                                            <i class="fa-solid fa-paper-plane"></i>
-                                        </a>
+                            </div>
+                        @endif
 
-                                        <button wire:click="openPostShareModal({{ $ev->id }})" class="btn btn-sm" style="background: rgba(156,39,176,0.12); border: 1px solid rgba(156,39,176,0.3); color: #9C27B0; font-size:0.85rem; width:32px; height:32px; padding:0; display:flex; align-items:center; justify-content:center;" title="مشاركة البوست">
-                                            <i class="fa-solid fa-share-nodes"></i>
-                                        </button>
+                        @if($isDateReached && !$ev->is_ended)
+                            <div style="margin-top: auto; padding-top: 4px; text-align: center;">
+                                <button wire:click="openEndEventModal({{ $ev->id }})" class="btn btn-sm w-100" style="background: rgba(76,175,80,0.15); border: 1px solid rgba(76,175,80,0.4); color: #66bb6a; font-size: 0.68rem; font-weight: 700; padding: 3px 6px; border-radius: 5px;" title="إنهاء الحفلة">
+                                    <i class="fa-solid fa-flag-checkered me-1"></i> إنهاء الحفلة
+                                </button>
+                            </div>
+                        @endif
+                    </div>
 
-                                        <button wire:click="editEvent({{ $ev->id }})" class="btn btn-sm" style="background: rgba(33,150,243,0.12); border: 1px solid rgba(33,150,243,0.3); color: #2196F3; font-size:0.85rem; width:32px; height:32px; padding:0; display:flex; align-items:center; justify-content:center;" title="تعديل الحفلة">
-                                            <i class="fa-solid fa-pen-to-square"></i>
-                                        </button>
-
-                                        <button wire:click="openUploadPostImageModal({{ $ev->id }})" class="btn btn-sm" style="background: rgba(156,39,176,0.12); border: 1px solid rgba(156,39,176,0.3); color: #9C27B0; font-size:0.85rem; width:32px; height:32px; padding:0; display:flex; align-items:center; justify-content:center;" title="رفع صورة البوست">
-                                            <i class="fa-solid fa-upload"></i>
-                                        </button>
-                                    @endif
-
-                                    @if($isDateReached && !$ev->is_ended)
-                                        <button wire:click="openEndEventModal({{ $ev->id }})" class="btn btn-sm" style="background: rgba(76,175,80,0.12); border: 1px solid rgba(76,175,80,0.3); color: #4CAF50; font-size:0.75rem; font-weight: bold; height:32px;" title="إنهاء الحفلة">
-                                            <i class="fa-solid fa-flag-checkered me-1"></i> انهاء الحفلة
-                                        </button>
-                                    @endif
-
-                                    @if(!$ev->is_ended)
-                                        <button wire:click="deleteEvent({{ $ev->id }})" wire:confirm="هل أنت متأكد من حذف هذه الحفلة نهائياً؟" class="btn btn-sm" style="background: rgba(233,30,99,0.12); border: 1px solid rgba(233,30,99,0.3); color: #E91E63; font-size:0.85rem; width:32px; height:32px; padding:0; display:flex; align-items:center; justify-content:center;" title="حذف الحفلة">
-                                            <i class="fa-solid fa-trash"></i>
-                                        </button>
-                                    @endif
-
-                                    @if($ev->is_ended)
-                                        <button wire:click="openEndEventModal({{ $ev->id }})" class="btn btn-sm" style="background: rgba(33,150,243,0.12); border: 1px solid rgba(33,150,243,0.3); color: #2196F3; font-size:0.75rem; height:32px;" title="تعديل تفاصيل الإنهاء">
-                                            <i class="fa-solid fa-pen-to-square"></i> تعديل
-                                        </button>
-                                        <button wire:click="hideEvent({{ $ev->id }})" wire:confirm="هل أنت متأكد من إخفاء هذه الحفلة من القائمة؟ (يمكنك إيجادها عبر البحث لاحقاً)" class="btn btn-sm" style="background: rgba(158,158,158,0.12); border: 1px solid rgba(158,158,158,0.3); color: #9E9E9E; font-size:0.75rem; height:32px;" title="إخفاء من القائمة">
-                                            <i class="fa-solid fa-eye-slash"></i> حذف
-                                        </button>
-                                    @endif
-                                </div>
-                            </td>
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="7" class="text-center py-5">
-                                <div style="color: var(--text-secondary);">
-                                    <i class="fa-solid fa-calendar-check fa-2x mb-3" style="color: rgba(76,175,80,0.3);"></i>
-                                    <h6>لا توجد حجوزات بعد. اضغط "إضافة حجز جديد" لبدء حجز فنان.</h6>
-                                </div>
-                            </td>
-                        </tr>
-                    @endforelse
-                </tbody>
-            </table>
+                    <div style="margin-top: auto; padding: 6px; border-top: 1px solid rgba(255,255,255,0.06); background: rgba(0,0,0,0.2);">
+                        @if($ev->is_ended)
+                            <div style="display: flex; gap: 5px;">
+                                <button wire:click="openEndEventModal({{ $ev->id }})" class="booking-matrix-action-btn" style="background: rgba(33,150,243,0.16); border: 1px solid rgba(33,150,243,0.35); color: #4fc3f7; gap: 4px;" title="تعديل تفاصيل الإنهاء">
+                                    <i class="fa-solid fa-pen-to-square"></i> تعديل
+                                </button>
+                                <button wire:click="hideEvent({{ $ev->id }})" wire:confirm="هل أنت متأكد من إخفاء هذه الحفلة من القائمة؟ (يمكنك إيجادها عبر البحث لاحقاً)" class="booking-matrix-action-btn" style="background: rgba(158,158,158,0.16); border: 1px solid rgba(158,158,158,0.35); color: #bdbdbd; gap: 4px;" title="إخفاء من القائمة">
+                                    <i class="fa-solid fa-eye-slash"></i> حذف
+                                </button>
+                            </div>
+                        @else
+                            <div style="display: flex; gap: 3px; justify-content: space-between;">
+                                <button wire:click="openAddToEventModal({{ $ev->id }})" class="booking-matrix-action-btn" style="background: rgba(76,175,80,0.16); border: 1px solid rgba(76,175,80,0.35); color: #66bb6a;" title="إضافة فنان/عازف">
+                                    <i class="fa-solid fa-user-plus"></i>
+                                </button>
+                                <a href="{{ route('admin.customers', ['market_event' => $ev->id]) }}" class="booking-matrix-action-btn" style="background: rgba(255,152,0,0.16); border: 1px solid rgba(255,152,0,0.35); color: #ffb74d;" title="تسويق الحفلة">
+                                    <i class="fa-solid fa-paper-plane"></i>
+                                </a>
+                                <button wire:click="openPostShareModal({{ $ev->id }})" class="booking-matrix-action-btn" style="background: rgba(156,39,176,0.16); border: 1px solid rgba(156,39,176,0.35); color: #ce93d8;" title="مشاركة البوست">
+                                    <i class="fa-solid fa-share-nodes"></i>
+                                </button>
+                                <button wire:click="editEvent({{ $ev->id }})" class="booking-matrix-action-btn" style="background: rgba(33,150,243,0.16); border: 1px solid rgba(33,150,243,0.35); color: #4fc3f7;" title="تعديل الحفلة">
+                                    <i class="fa-solid fa-pen-to-square"></i>
+                                </button>
+                                <button wire:click="openUploadPostImageModal({{ $ev->id }})" class="booking-matrix-action-btn" style="background: rgba(0,188,212,0.16); border: 1px solid rgba(0,188,212,0.35); color: #4dd0e1;" title="رفع صورة البوست">
+                                    <i class="fa-solid fa-upload"></i>
+                                </button>
+                                <button wire:click="deleteEvent({{ $ev->id }})" wire:confirm="هل أنت متأكد من حذف هذه الحفلة نهائياً؟" class="booking-matrix-action-btn" style="background: rgba(233,30,99,0.16); border: 1px solid rgba(233,30,99,0.35); color: #f06292;" title="حذف الحفلة">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </div>
+                        @endif
+                    </div>
+                </div>
+            @endforeach
         </div>
-    </div>
+    @else
+        <div class="card text-center py-5" style="border: 1px solid rgba(76,175,80,0.2);">
+            <div style="color: var(--text-secondary);">
+                <i class="fa-solid fa-calendar-check fa-2x mb-3" style="color: rgba(76,175,80,0.3);"></i>
+                <h6>لا توجد حجوزات بعد. اضغط "إضافة حجز جديد" لبدء حجز فنان.</h6>
+            </div>
+        </div>
+    @endif
     
     @endif
 
