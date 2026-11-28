@@ -3,7 +3,7 @@
     <div style="display: flex; align-items: center; gap: 14px; position: relative;">
         <!-- Logo -->
         <div style="flex-shrink: 0; position: relative;">
-            <img src="/images/mars-logo.png" alt="مارس" style="width: 58px; height: 58px; border-radius: 50%; object-fit: cover; border: 2px solid #d4af37; box-shadow: 0 4px 15px rgba(212, 175, 55, 0.4); display: block;">
+            <img src="/images/mars-logo.png" alt="مارس لاونج" style="width: 58px; height: 58px; border-radius: 50%; object-fit: cover; border: 2px solid #d4af37; box-shadow: 0 4px 15px rgba(212, 175, 55, 0.4); display: block;">
             <span style="position: absolute; bottom: -3px; right: -3px; background: #4CAF50; width: 14px; height: 14px; border-radius: 50%; border: 2px solid #141414;"></span>
         </div>
 
@@ -12,7 +12,7 @@
             <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
                 <h4 style="margin: 0; color: #fff; font-size: 1.05rem; font-weight: 800; display: flex; align-items: center; gap: 6px;">
                     <i class="fa-solid fa-mobile-screen-button" style="color: #d4af37; font-size: 0.95rem;"></i>
-                    تثبيت تطبيق مارس سوفت
+                    تثبيت تطبيق مارس لاونج
                 </h4>
                 <button type="button" id="pwa-close-btn" style="background: none; border: none; color: #888; font-size: 1.1rem; cursor: pointer; padding: 0 4px; line-height: 1;" title="إغلاق">&times;</button>
             </div>

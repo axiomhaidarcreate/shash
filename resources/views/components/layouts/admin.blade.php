@@ -6,7 +6,7 @@
     <meta name="description" content="نظام مارس سوفت - لوحة تحكم المدير">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="مارس سوفت">
+    <meta name="apple-mobile-web-app-title" content="مارس لاونج">
     <meta name="theme-color" content="#d4af37">
     <title>{{ $title ?? 'مارس سوفت - لوحة تحكم المدير' }}</title>
     <link rel="manifest" href="/manifest.json">

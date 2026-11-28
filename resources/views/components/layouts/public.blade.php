@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover">
     <title>{{ $title ?? 'الروابط' }}</title>
+    <meta name="apple-mobile-web-app-title" content="مارس لاونج">
     <meta name="description" content="صفحة الروابط العامة">
     <meta name="theme-color" content="#d4af37">
     <link rel="manifest" href="/manifest.json">
