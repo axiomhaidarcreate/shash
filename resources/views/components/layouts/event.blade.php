@@ -5,6 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover">
     <title>{{ $title ?? 'الطلب الذاتي - الحفلات' }}</title>
     <meta name="theme-color" content="#d4af37">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="icon" type="image/png" href="/favicon.png">
+    <link rel="shortcut icon" href="/favicon.ico">
+    <link rel="apple-touch-icon" href="/icons/icon-192.png">
     
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
@@ -190,5 +194,6 @@
     </main>
 
     @livewireScripts
+    @include('components.pwa-prompt')
 </body>
 </html>

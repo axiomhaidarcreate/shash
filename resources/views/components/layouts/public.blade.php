@@ -6,6 +6,10 @@
     <title>{{ $title ?? 'الروابط' }}</title>
     <meta name="description" content="صفحة الروابط العامة">
     <meta name="theme-color" content="#d4af37">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="icon" type="image/png" href="/favicon.png">
+    <link rel="shortcut icon" href="/favicon.ico">
+    <link rel="apple-touch-icon" href="/icons/icon-192.png">
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     @livewireStyles
@@ -113,5 +117,6 @@
 <body>
     {{ $slot }}
     @livewireScripts
+    @include('components.pwa-prompt')
 </body>
 </html>

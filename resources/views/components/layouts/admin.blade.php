@@ -10,6 +10,8 @@
     <meta name="theme-color" content="#d4af37">
     <title>{{ $title ?? 'مارس سوفت - لوحة تحكم المدير' }}</title>
     <link rel="manifest" href="/manifest.json">
+    <link rel="icon" type="image/png" href="/favicon.png">
+    <link rel="shortcut icon" href="/favicon.ico">
     <link rel="apple-touch-icon" href="/icons/icon-192.png">
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -652,17 +654,6 @@
         document.addEventListener('touchstart', initAudioAndNotifications, { once: true });
         initNotifications();
     </script>
-    <script>
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('/sw.js').catch(() => {});
-        }
-    </script>
-</body>
-</html>
-    <script>
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('/sw.js').catch(() => {});
-        }
-    </script>
+    @include('components.pwa-prompt')
 </body>
 </html>

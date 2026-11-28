@@ -31,6 +31,19 @@ Route::get('/', function () {
     return redirect()->route('login');
 });
 
+Route::get('/manifest.json', function () {
+    return response()->file(public_path('manifest.json'), [
+        'Content-Type' => 'application/manifest+json; charset=UTF-8',
+    ]);
+});
+
+Route::get('/sw.js', function () {
+    return response()->file(public_path('sw.js'), [
+        'Content-Type' => 'application/javascript; charset=UTF-8',
+        'Service-Worker-Allowed' => '/',
+    ]);
+});
+
 Route::get('/file-serve/{path}', function ($path) {
     if (\Illuminate\Support\Facades\Storage::disk('public')->exists($path)) {
         return \Illuminate\Support\Facades\Storage::disk('public')->response($path);
