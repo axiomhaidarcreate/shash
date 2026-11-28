@@ -12,7 +12,7 @@
             <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
                 <h4 style="margin: 0; color: #fff; font-size: 1.05rem; font-weight: 800; display: flex; align-items: center; gap: 6px;">
                     <i class="fa-solid fa-mobile-screen-button" style="color: #d4af37; font-size: 0.95rem;"></i>
-                    تثبيت تطبيق مارس
+                    تثبيت تطبيق مارس سوفت
                 </h4>
                 <button type="button" id="pwa-close-btn" style="background: none; border: none; color: #888; font-size: 1.1rem; cursor: pointer; padding: 0 4px; line-height: 1;" title="إغلاق">&times;</button>
             </div>

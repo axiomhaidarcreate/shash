@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mars-pwa-v2';
+const CACHE_NAME = 'mars-soft-v1';
 const OFFLINE_URL = '/offline.html';
 
 const STATIC_ASSETS = [

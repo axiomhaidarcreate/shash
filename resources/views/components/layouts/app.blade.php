@@ -556,7 +556,7 @@
                         icon: icon || '/icons/icon-192.png',
                         badge: '/icons/icon-192.png',
                         vibrate: [200, 100, 200],
-                        tag: 'shisha-' + Date.now(),
+                        tag: 'mars-' + Date.now(),
                         requireInteraction: false,
                     });
                     setTimeout(() => n.close(), 6000);
