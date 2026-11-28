@@ -879,6 +879,9 @@
                 <button wire:click="$set('filter_booking_status', '{{ $filter_booking_status === 'completed' ? '' : 'completed' }}')" class="btn-filter {{ $filter_booking_status === 'completed' ? 'active' : '' }}">
                     <i class="fa-solid fa-flag-checkered me-1"></i> المكتمل
                 </button>
+                <button wire:click="$set('filter_booking_status', '{{ $filter_booking_status === 'holiday' ? '' : 'holiday' }}')" class="btn-filter {{ $filter_booking_status === 'holiday' ? 'active' : '' }}">
+                    <i class="fa-solid fa-crown me-1"></i> العطلات
+                </button>
             </div>
         </div>
 
@@ -926,6 +929,7 @@
                         <option value="approved">معتمد (قادمة أو قائمة)</option>
                         <option value="suggested">مقترح (بانتظار الاعتماد)</option>
                         <option value="completed">مكتملة</option>
+                        <option value="holiday">العطلات (الخميس والجمعة)</option>
                     </select>
                 </div>
             </div>
@@ -1069,13 +1073,13 @@
                     </div>
 
                     <div style="padding: 8px 7px; flex: 1; display: flex; flex-direction: column; gap: 6px;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; gap: 4px; font-size: 0.68rem;">
-                            <span style="color: #4CAF50; font-weight: 700; direction: ltr;">
-                                {{ $carbonDate ? $carbonDate->format('Y-m-d') : 'غير محدد' }}
-                            </span>
-                            <span style="color: #ff9800; font-weight: 600; display: inline-flex; align-items: center; gap: 3px; white-space: nowrap;">
-                                <span style="width: 5px; height: 5px; border-radius: 50%; background: #ff9800; display: inline-block;"></span>
+                        <div style="display: flex; justify-content: space-between; align-items: center; gap: 4px; font-size: 0.84rem;">
+                            <span style="color: #ff9800; font-weight: 800; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;">
+                                <span style="width: 6px; height: 6px; border-radius: 50%; background: #ff9800; display: inline-block;"></span>
                                 {{ $carbonDate ? $carbonDate->locale('ar')->translatedFormat('l') : '---' }}
+                            </span>
+                            <span style="color: #4CAF50; font-weight: 800; direction: ltr;">
+                                {{ $carbonDate ? $carbonDate->format('Y-m-d') : 'غير محدد' }}
                             </span>
                         </div>
 
@@ -1097,11 +1101,11 @@
                                                 $textColor = $isFemale ? '#f06292' : '#4fc3f7';
                                                 $bColor = $isFemale ? 'rgba(233,30,99,0.3)' : 'rgba(33,150,243,0.3)';
                                             @endphp
-                                            <span style="background: {{ $bgColor }}; color: {{ $textColor }}; border: 1px solid {{ $bColor }}; font-size: 0.8rem; font-weight: 700; padding: 4px 8px; border-radius: 12px; display: inline-flex; align-items: center; gap: 5px; max-width: 100%;">
-                                                <i class="fa-solid fa-microphone" style="font-size: 0.72rem;"></i>
+                                            <span style="background: {{ $bgColor }}; color: {{ $textColor }}; border: 1px solid {{ $bColor }}; font-size: 0.92rem; font-weight: 800; padding: 5px 10px; border-radius: 14px; display: inline-flex; align-items: center; gap: 6px; max-width: 100%;">
+                                                <i class="fa-solid fa-microphone" style="font-size: 0.82rem;"></i>
                                                 <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ $bk->artist->stage_name ?: $bk->artist->real_name ?? '' }}</span>
                                                 @if(!$ev->is_ended)
-                                                    <button wire:click="deleteBooking({{ $bk->id }})" wire:confirm="هل أنت متأكد من حذف حجز الفنان {{ $bk->artist->stage_name ?: $bk->artist->real_name ?? '' }} من هذه الحفلة؟" style="background: none; border: none; color: #F44336; cursor: pointer; padding: 0; font-size: 0.75rem; line-height: 1;" title="حذف هذا الحجز">
+                                                    <button wire:click="deleteBooking({{ $bk->id }})" wire:confirm="هل أنت متأكد من حذف حجز الفنان {{ $bk->artist->stage_name ?: $bk->artist->real_name ?? '' }} من هذه الحفلة؟" style="background: none; border: none; color: #F44336; cursor: pointer; padding: 0; font-size: 0.85rem; line-height: 1;" title="حذف هذا الحجز">
                                                         <i class="fa-solid fa-xmark"></i>
                                                     </button>
                                                 @endif
@@ -1113,10 +1117,10 @@
                                 @if($evBookings->whereNotNull('musician_id')->count() > 0)
                                     <div style="display: flex; flex-wrap: wrap; gap: 4px; justify-content: center;">
                                         @foreach($evBookings->whereNotNull('musician_id') as $bk)
-                                            <span style="background: rgba(76,175,80,0.14); color: #81c784; border: 1px solid rgba(76,175,80,0.35); font-size: 0.78rem; font-weight: 700; padding: 4px 8px; border-radius: 12px; display: inline-flex; align-items: center; gap: 5px; max-width: 100%;">
+                                            <span style="background: rgba(76,175,80,0.14); color: #81c784; border: 1px solid rgba(76,175,80,0.35); font-size: 0.9rem; font-weight: 800; padding: 5px 10px; border-radius: 14px; display: inline-flex; align-items: center; gap: 6px; max-width: 100%;">
                                                 <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ $bk->musician->stage_name ?: $bk->musician->real_name ?? '' }}</span>
                                                 @if(!$ev->is_ended)
-                                                    <button wire:click="deleteBooking({{ $bk->id }})" wire:confirm="هل أنت متأكد من حذف حجز العازف {{ $bk->musician->stage_name ?: $bk->musician->real_name ?? '' }} من هذه الحفلة؟" style="background: none; border: none; color: #F44336; cursor: pointer; padding: 0; font-size: 0.75rem; line-height: 1;" title="حذف هذا الحجز">
+                                                    <button wire:click="deleteBooking({{ $bk->id }})" wire:confirm="هل أنت متأكد من حذف حجز العازف {{ $bk->musician->stage_name ?: $bk->musician->real_name ?? '' }} من هذه الحفلة؟" style="background: none; border: none; color: #F44336; cursor: pointer; padding: 0; font-size: 0.85rem; line-height: 1;" title="حذف هذا الحجز">
                                                         <i class="fa-solid fa-xmark"></i>
                                                     </button>
                                                 @endif

@@ -54,6 +54,7 @@ class ArtistsManager extends Component
     public $editingMusicianId = null;
     public $editingEventId = null;
     public $editingTemplateId = null;
+    public $editingBookingEventId = null;
 
     // --- Artist Fields ---
     public $artist_real_name, $artist_stage_name, $artist_nationality, $artist_license_number, $artist_phone, $artist_image;
@@ -374,7 +375,7 @@ class ArtistsManager extends Component
         $this->reset([
             'booking_event_title', 'booking_event_description', 'booking_event_date', 'booking_event_time', 'booking_event_image',
             'booking_artist_id_1', 'booking_artist_id_2', 'booking_musician_id_1', 'booking_musician_id_2', 'booking_price', 'booking_notes',
-            'conflictWarning', 'conflictArtistName', 'booking_template_id', 'booking_status'
+            'conflictWarning', 'conflictArtistName', 'booking_template_id', 'booking_status', 'editingBookingEventId'
         ]);
         $this->booking_status = 'approved';
         $this->isBookingModalOpen = true;
@@ -416,6 +417,7 @@ class ArtistsManager extends Component
             foreach ($artistIdsToCheck as $artistId) {
                 $exists = ArtistBooking::where('artist_id', $artistId)
                     ->whereDate('booking_date', $this->booking_event_date)
+                    ->when($this->editingBookingEventId, fn($q) => $q->where('event_id', '!=', $this->editingBookingEventId))
                     ->exists();
 
                 if ($exists) {
@@ -447,6 +449,41 @@ class ArtistsManager extends Component
 
         if ($this->booking_event_image) {
             $eventData['artist_image'] = $this->booking_event_image->store('site/events', 'public');
+        }
+
+        if ($this->editingBookingEventId) {
+            $event = Event::find($this->editingBookingEventId);
+            if (!$event) {
+                $this->editingBookingEventId = null;
+                $this->isBookingModalOpen = false;
+                return;
+            }
+            $event->update($eventData);
+
+            // Sync bookings for this event
+            ArtistBooking::where('event_id', $event->id)->delete();
+
+            $artists = array_values(array_filter(array_unique([$this->booking_artist_id_1, $this->booking_artist_id_2])));
+            $musicians = array_values(array_filter(array_unique([$this->booking_musician_id_1, $this->booking_musician_id_2])));
+            $count = max(count($artists), count($musicians));
+
+            for ($i = 0; $i < $count; $i++) {
+                ArtistBooking::create([
+                    'artist_id' => $artists[$i] ?? null,
+                    'musician_id' => $musicians[$i] ?? null,
+                    'event_id' => $event->id,
+                    'booking_date' => $this->booking_event_date,
+                    'price' => $i == 0 ? ($this->booking_price ?? 0) : 0,
+                    'notes' => $this->booking_notes,
+                    'status' => $this->booking_status ?: 'approved',
+                ]);
+            }
+
+            $this->editingBookingEventId = null;
+            $this->isBookingModalOpen = false;
+            $this->booking_template_id = '';
+            $this->dispatch('notify', ['message' => 'تم تحديث بيانات الحفلة والحجز بنجاح!', 'type' => 'success']);
+            return;
         }
 
         $event = Event::create($eventData);
@@ -526,12 +563,36 @@ class ArtistsManager extends Component
     // 4b. Add Artist/Musician to Existing Event
     // ========================================
     public function openAddToEventModal($eventId) {
-        $this->addToEventId = $eventId;
-        $this->addToEvent_artist_id = null;
-        $this->addToEvent_musician_id = null;
-        $this->addToEvent_price = null;
-        $this->addToEvent_notes = null;
-        $this->isAddToEventModalOpen = true;
+        $event = Event::with('artistBookings')->find($eventId);
+        if (!$event) return;
+
+        $this->reset([
+            'booking_event_title', 'booking_event_description', 'booking_event_date', 'booking_event_time', 'booking_event_image',
+            'booking_artist_id_1', 'booking_artist_id_2', 'booking_musician_id_1', 'booking_musician_id_2', 'booking_price', 'booking_notes',
+            'conflictWarning', 'conflictArtistName', 'booking_template_id', 'booking_status'
+        ]);
+
+        $this->editingBookingEventId = $event->id;
+        $this->booking_event_title = $event->title;
+        $this->booking_event_description = $event->description;
+        $this->booking_event_date = $event->event_date ? \Carbon\Carbon::parse($event->event_date)->format('Y-m-d') : '';
+        $this->booking_event_time = $event->event_time;
+
+        $bookings = $event->artistBookings;
+        $artistIds = $bookings->whereNotNull('artist_id')->pluck('artist_id')->unique()->values();
+        $musicianIds = $bookings->whereNotNull('musician_id')->pluck('musician_id')->unique()->values();
+
+        $this->booking_artist_id_1 = $artistIds[0] ?? '';
+        $this->booking_artist_id_2 = $artistIds[1] ?? '';
+        $this->booking_musician_id_1 = $musicianIds[0] ?? '';
+        $this->booking_musician_id_2 = $musicianIds[1] ?? '';
+
+        $firstBooking = $bookings->first();
+        $this->booking_price = $firstBooking?->price ?? '';
+        $this->booking_notes = $firstBooking?->notes ?? '';
+        $this->booking_status = $firstBooking?->status ?: 'approved';
+
+        $this->isBookingModalOpen = true;
     }
 
     public function saveAddToEvent() {
@@ -923,6 +984,8 @@ class ArtistsManager extends Component
                 $q->where('is_ended', false)
                   ->orWhereNull('is_ended');
             })->whereHas('artistBookings');
+        } elseif ($this->filter_booking_status === 'holiday') {
+            $eventsQuery->whereRaw('DAYOFWEEK(event_date) IN (5, 6)');
         } elseif ($this->filter_booking_status === 'approved') {
             $eventsQuery->where(function($q) {
                 $q->where('is_ended', false)

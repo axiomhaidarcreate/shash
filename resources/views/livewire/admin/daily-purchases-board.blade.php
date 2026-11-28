@@ -147,6 +147,7 @@
                     <tr>
                         <th class="no-print" style="width: 70px; text-align: center;"><i class="fa-solid fa-arrows-up-down"></i> ترتيب</th>
                         <th>رقم الطلب</th>
+                        <th>تاريخ الطلب</th>
                         <th>المطبخ</th>
                         <th>اسم الصنف</th>
                         <th>العدد / الكمية</th>
@@ -182,6 +183,9 @@
                                 </div>
                             </td>
                             <td>#{{ $request->id }}</td>
+                            <td style="font-size: 0.85rem; color: var(--text-secondary); white-space: nowrap;">
+                                {{ $request->created_at ? $request->created_at->format('Y-m-d') : '-' }}
+                            </td>
                             <td>
                                 @if($request->kitchen_source == 'شيشة')
                                     <span class="badge" style="background: rgba(255, 152, 0, 0.15); color: #FF9800; border: 1px solid rgba(255, 152, 0, 0.3);"><i class="fa-solid fa-fire"></i> شيشة</span>
